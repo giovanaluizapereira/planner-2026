@@ -1,26 +1,29 @@
 
 import React, { useState, useCallback, useMemo, useEffect, useRef } from 'react';
-import { Calendar, RefreshCw, Trophy, Save, Loader2 } from 'lucide-react';
-import ManualEntry from './components/ManualEntry';
-import RankingChart from './components/RankingChart';
-import GoalTracker from './components/GoalTracker';
-import DSTStats from './components/DSTStats';
-import LevelUpModal from './components/LevelUpModal';
+import { RefreshCw, Trophy, Loader2, Upload, LayoutPanelLeft } from 'lucide-react';
+import ManualEntry from './components/ManualEntry.tsx';
+import RankingChart from './components/RankingChart.tsx';
+import GoalTracker from './components/GoalTracker.tsx';
+import DSTStats from './components/DSTStats.tsx';
+import LevelUpModal from './components/LevelUpModal.tsx';
+import WheelUploader from './components/WheelUploader.tsx';
 import { WheelData, Goal } from './types';
 import { supabase } from './lib/supabase';
+import { analyzeWheelImage } from './services/geminiService';
 
 const App: React.FC = () => {
   const [baseData, setBaseData] = useState<WheelData[]>([]);
   const [isStarted, setIsStarted] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
+  const [isAnalyzing, setIsAnalyzing] = useState(false);
+  const [currentImage, setCurrentImage] = useState<string | null>(null);
   const [lastSaved, setLastSaved] = useState<Date | null>(null);
+  const [entryMode, setEntryMode] = useState<'upload' | 'manual'>('upload');
   
-  // Controle de Level Up
   const [levelUpInfo, setLevelUpInfo] = useState<{ area: string, days: number, level: number } | null>(null);
   const prevScoresRef = useRef<Record<string, number>>({});
   const startTimeRef = useRef<number>(Date.now());
 
-  // Carregar dados iniciais do Supabase ao montar o componente
   useEffect(() => {
     const loadData = async () => {
       if (!supabase) return;
@@ -36,7 +39,6 @@ const App: React.FC = () => {
         setBaseData(data.user_data);
         setIsStarted(true);
         setLastSaved(new Date(data.created_at));
-        // Ajustar scores anteriores para o detector de level up não disparar logo de cara
         const scores: Record<string, number> = {};
         data.user_data.forEach((d: any) => scores[d.category] = d.score);
         prevScoresRef.current = scores;
@@ -74,22 +76,36 @@ const App: React.FC = () => {
     initialData.forEach(d => scores[d.category] = d.score);
     prevScoresRef.current = scores;
     setIsStarted(true);
-    
-    // Salva imediatamente ao iniciar
     saveToSupabase(initialData, 0);
   }, [saveToSupabase]);
+
+  const handleImageUpload = async (base64: string) => {
+    setCurrentImage(base64);
+    setIsAnalyzing(true);
+    try {
+      const results = await analyzeWheelImage(base64);
+      if (results && results.length > 0) {
+        handleConfirmScores(results);
+      } else {
+        alert("Não conseguimos ler a imagem. Tente inserir os dados manualmente.");
+        setEntryMode('manual');
+      }
+    } catch (error) {
+      console.error(error);
+      alert("Erro ao analisar imagem. Verifique sua chave API.");
+    } finally {
+      setIsAnalyzing(false);
+    }
+  };
 
   const evolvedData = useMemo(() => {
     return baseData.map(item => {
       const totalGoals = item.goals.length;
       if (totalGoals === 0) return { ...item, currentScore: item.score };
-
       const completedCount = item.goals.filter(g => g.completed).length;
       const progressRatio = completedCount / totalGoals;
-      
       const bonus = progressRatio * (10 - item.score);
       const currentScore = parseFloat((item.score + bonus).toFixed(1));
-
       return { ...item, currentScore };
     });
   }, [baseData]);
@@ -103,19 +119,15 @@ const App: React.FC = () => {
       const diff = (curr.currentScore || 0) - curr.score;
       return acc + (diff > 0 ? diff * 100 : 0);
     }, 0);
-
     return Math.floor(baseXP + goalsXP + evolutionXP);
   }, [baseData, evolvedData]);
 
-  // Detector de Level Up e Auto-save ao mudar dados
   useEffect(() => {
     if (baseData.length === 0) return;
-
     let shouldSave = false;
     evolvedData.forEach(item => {
       const prevScore = prevScoresRef.current[item.category];
       const newScore = item.currentScore || item.score;
-
       if (prevScore !== undefined && Math.floor(newScore) > Math.floor(prevScore)) {
         const diffDays = Math.floor((Date.now() - startTimeRef.current) / (1000 * 60 * 60 * 24)) + 1;
         setLevelUpInfo({
@@ -125,14 +137,9 @@ const App: React.FC = () => {
         });
         shouldSave = true;
       }
-      
-      if (newScore !== prevScore) {
-        shouldSave = true;
-      }
-      
+      if (newScore !== prevScore) shouldSave = true;
       prevScoresRef.current[item.category] = newScore;
     });
-
     if (shouldSave) {
       const timeout = setTimeout(() => saveToSupabase(baseData, totalXP), 2000);
       return () => clearTimeout(timeout);
@@ -149,6 +156,7 @@ const App: React.FC = () => {
     if (window.confirm("Isso apagará sua 'run' atual permanentemente. Deseja recomeçar?")) {
       setBaseData([]);
       setIsStarted(false);
+      setCurrentImage(null);
       prevScoresRef.current = {};
       if (supabase) {
         await supabase.from('planner_runs').delete().neq('id', '00000000-0000-0000-0000-000000000000');
@@ -200,14 +208,45 @@ const App: React.FC = () => {
 
       <main className="max-w-7xl mx-auto px-6 pt-12">
         {!isStarted ? (
-          <section className="max-w-4xl mx-auto mt-12 mb-20">
-            <div className="text-center mb-16">
-              <h2 className="text-6xl font-dst text-[#f5e6d3] mb-6 tracking-tighter drop-shadow-lg">Mapeie sua Sobrevivência</h2>
+          <section className="max-w-4xl mx-auto mt-12 mb-20 space-y-12">
+            <div className="text-center">
+              <h2 className="text-6xl font-dst text-[#f5e6d3] mb-6 tracking-tighter drop-shadow-lg uppercase">Mapeie sua Roda</h2>
               <p className="text-[#f5e6d3]/60 font-dst text-lg max-w-2xl mx-auto leading-relaxed italic">
-                Insira suas notas atuais ou responda o pergaminho de cada área para uma análise mais profunda.
+                Escolha o método de entrada para iniciar sua jornada de evolução em 2026.
               </p>
             </div>
-            <ManualEntry onConfirm={handleConfirmScores} />
+
+            <div className="flex justify-center gap-4">
+              <button 
+                onClick={() => setEntryMode('upload')}
+                className={`flex items-center gap-3 px-6 py-3 font-dst uppercase tracking-widest text-sm border-2 transition-all ${entryMode === 'upload' ? 'bg-amber-600 text-[#1a1612] border-amber-500' : 'bg-[#1a1612] text-[#f5e6d3]/40 border-[#3d352d]'}`}
+              >
+                <Upload size={18} /> Subir Imagem
+              </button>
+              <button 
+                onClick={() => setEntryMode('manual')}
+                className={`flex items-center gap-3 px-6 py-3 font-dst uppercase tracking-widest text-sm border-2 transition-all ${entryMode === 'manual' ? 'bg-amber-600 text-[#1a1612] border-amber-500' : 'bg-[#1a1612] text-[#f5e6d3]/40 border-[#3d352d]'}`}
+              >
+                <LayoutPanelLeft size={18} /> Notas Manuais
+              </button>
+            </div>
+
+            <div className="bg-[#1a1612] p-8 border-4 border-[#3d352d] shadow-2xl">
+              {entryMode === 'upload' ? (
+                <div className="space-y-8">
+                  <WheelUploader 
+                    onImageUpload={handleImageUpload} 
+                    isAnalyzing={isAnalyzing} 
+                    currentImage={currentImage} 
+                  />
+                  <p className="text-center text-[10px] text-[#f5e6d3]/30 uppercase tracking-[0.2em]">
+                    Nossa IA identificará as áreas e notas automaticamente
+                  </p>
+                </div>
+              ) : (
+                <ManualEntry onConfirm={handleConfirmScores} />
+              )}
+            </div>
           </section>
         ) : (
           <div className="space-y-16">
