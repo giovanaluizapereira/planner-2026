@@ -1,0 +1,4 @@
+/* Estilos globais vazios para satisfazer o build tool */
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
