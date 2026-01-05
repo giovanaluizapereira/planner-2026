@@ -1,12 +1,11 @@
-
 import React, { useState, useCallback, useMemo, useEffect, useRef } from 'react';
 import { RefreshCw, Trophy, Loader2, Upload, LayoutPanelLeft } from 'lucide-react';
-import ManualEntry from './components/ManualEntry.tsx';
-import RankingChart from './components/RankingChart.tsx';
-import GoalTracker from './components/GoalTracker.tsx';
-import DSTStats from './components/DSTStats.tsx';
-import LevelUpModal from './components/LevelUpModal.tsx';
-import WheelUploader from './components/WheelUploader.tsx';
+import ManualEntry from './components/ManualEntry';
+import RankingChart from './components/RankingChart';
+import GoalTracker from './components/GoalTracker';
+import DSTStats from './components/DSTStats';
+import LevelUpModal from './components/LevelUpModal';
+import WheelUploader from './components/WheelUploader';
 import { WheelData, Goal } from './types';
 import { supabase } from './lib/supabase';
 import { analyzeWheelImage } from './services/geminiService';
@@ -210,7 +209,7 @@ const App: React.FC = () => {
         {!isStarted ? (
           <section className="max-w-4xl mx-auto mt-12 mb-20 space-y-12">
             <div className="text-center">
-              <h2 className="text-6xl font-dst text-[#f5e6d3] mb-6 tracking-tighter drop-shadow-lg uppercase">Mapeie sua Roda</h2>
+              <h2 className="text-6xl font-dst text-[#f5e6d3] mb-6 tracking-tighter drop-shadow-lg uppercase">Mapeie sua Jornada</h2>
               <p className="text-[#f5e6d3]/60 font-dst text-lg max-w-2xl mx-auto leading-relaxed italic">
                 Escolha o método de entrada para iniciar sua jornada de evolução em 2026.
               </p>
