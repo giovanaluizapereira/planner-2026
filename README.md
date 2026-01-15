@@ -1,20 +1,28 @@
-<div align="center">
-<img width="1200" height="475" alt="GHBanner" src="https://github.com/user-attachments/assets/0aa67016-6eaf-458a-adb2-6e31a0763ed6" />
-</div>
 
-# Run and deploy your AI Studio app
+# Planner 2026 - Survival Edition
 
-This contains everything you need to run your app locally.
+Este é um aplicativo premium de planejamento baseado na estética "Don't Starve", que utiliza IA para analisar sua Roda da Vida.
 
-View your app in AI Studio: https://ai.studio/apps/drive/1fDS9LaKvjT5OP4aYwAC-RHc25hRXSYu2
+## 🚀 Como configurar
 
-## Run Locally
+### 1. Supabase
+- Crie um projeto no [Supabase](https://supabase.com).
+- Execute o script SQL contido no arquivo `schema.sql` (ou no prompt da IA) no SQL Editor.
+- Obtenha sua `SUPABASE_URL` e `SUPABASE_ANON_KEY` no painel de configurações de API.
 
-**Prerequisites:**  Node.js
+### 2. Google Gemini API
+- Obtenha uma chave de API no [Google AI Studio](https://aistudio.google.com/).
 
+### 3. Vercel (Deploy)
+- Conecte seu repositório GitHub ao Vercel.
+- Adicione as seguintes Variáveis de Ambiente (Environment Variables):
+  - `API_KEY`: Sua chave do Gemini.
+  - `SUPABASE_URL`: URL do seu projeto Supabase.
+  - `SUPABASE_ANON_KEY`: Chave anônima do Supabase.
 
-1. Install dependencies:
-   `npm install`
-2. Set the `GEMINI_API_KEY` in [.env.local](.env.local) to your Gemini API key
-3. Run the app:
-   `npm run dev`
+## 🛠 Tecnologias
+- React + TypeScript
+- Tailwind CSS
+- Lucide React (Ícones)
+- Google Gemini API (Visão Computacional)
+- Supabase (Banco de Dados em Tempo Real)
