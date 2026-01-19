@@ -1,17 +1,41 @@
 
 import { createClient } from '@supabase/supabase-js';
 
-// No Vercel, você deve configurar estas variáveis em Settings > Environment Variables
-// Certifique-se de que os nomes estão EXATAMENTE como abaixo
-const supabaseUrl = process.env.SUPABASE_URL || '';
-const supabaseAnonKey = process.env.SUPABASE_ANON_KEY || '';
+// Tenta pegar do ambiente (Vercel/Node) ou do localStorage (Configuração Manual)
+const getSupabaseConfig = () => {
+  const envUrl = process.env.SUPABASE_URL;
+  const envKey = process.env.SUPABASE_ANON_KEY;
+  
+  const localUrl = typeof window !== 'undefined' ? localStorage.getItem('supabase_url') : null;
+  const localKey = typeof window !== 'undefined' ? localStorage.getItem('supabase_key') : null;
 
-if (!supabaseUrl || !supabaseAnonKey) {
+  return {
+    url: envUrl || localUrl || '',
+    key: envKey || localKey || ''
+  };
+};
+
+const { url, key } = getSupabaseConfig();
+
+if (!url || !key) {
   console.warn(
-    'AVISO: Supabase não configurado. Certifique-se de adicionar SUPABASE_URL e SUPABASE_ANON_KEY às suas variáveis de ambiente.'
+    'AVISO: Supabase não configurado. Use a tela de configuração manual no app.'
   );
 }
 
-export const supabase = (supabaseUrl && supabaseAnonKey) 
-  ? createClient(supabaseUrl, supabaseAnonKey)
+export const supabase = (url && key) 
+  ? createClient(url, key)
   : null;
+
+// Função utilitária para salvar chaves manualmente
+export const saveManualConfig = (url: string, key: string) => {
+  localStorage.setItem('supabase_url', url);
+  localStorage.setItem('supabase_key', key);
+  window.location.reload();
+};
+
+export const clearManualConfig = () => {
+  localStorage.removeItem('supabase_url');
+  localStorage.removeItem('supabase_key');
+  window.location.reload();
+};
