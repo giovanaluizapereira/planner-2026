@@ -1,7 +1,7 @@
 
 import React, { useState } from 'react';
-import { supabase } from '../lib/supabase';
-import { Skull, Mail, Lock, Loader2, LogIn, AlertTriangle, ExternalLink } from 'lucide-react';
+import { supabase, saveManualConfig } from '../lib/supabase';
+import { Skull, Mail, Lock, Loader2, LogIn, AlertTriangle, Settings, Save } from 'lucide-react';
 
 export const Auth: React.FC = () => {
   const [loading, setLoading] = useState(false);
@@ -10,13 +10,17 @@ export const Auth: React.FC = () => {
   const [isSignUp, setIsSignUp] = useState(false);
   const [message, setMessage] = useState<{ type: 'error' | 'success', text: string } | null>(null);
 
+  // Estados para configuração manual
+  const [manualUrl, setManualUrl] = useState('');
+  const [manualKey, setManualKey] = useState('');
+
   const handleAuth = async (e: React.FormEvent) => {
     e.preventDefault();
     
     if (!supabase) {
       setMessage({ 
         type: 'error', 
-        text: 'Erro: Variáveis SUPABASE_URL ou SUPABASE_ANON_KEY não encontradas no ambiente.' 
+        text: 'Erro crítico: Cliente Supabase não inicializado.' 
       });
       return;
     }
@@ -41,26 +45,58 @@ export const Auth: React.FC = () => {
     }
   };
 
+  const handleSaveConfig = () => {
+    if (!manualUrl || !manualKey) {
+      alert('Por favor, preencha ambos os campos.');
+      return;
+    }
+    saveManualConfig(manualUrl, manualKey);
+  };
+
   if (!supabase) {
     return (
       <div className="min-h-screen bg-[#1a1612] flex items-center justify-center p-6">
-        <div className="max-w-md w-full bg-[#25201b] border-4 border-red-900/50 p-10 shadow-2xl text-center">
-          <AlertTriangle size={48} className="text-red-500 mx-auto mb-4" />
-          <h2 className="text-2xl font-dst text-[#f5e6d3] uppercase mb-4">Configuração Pendente</h2>
-          <p className="text-sm text-[#f5e6d3]/60 mb-8 leading-relaxed">
-            O banco de dados (Supabase) não foi detectado. Para compartilhar com outras pessoas, você precisa configurar as chaves no seu painel da Vercel.
+        <div className="max-w-md w-full bg-[#25201b] border-4 border-amber-900/50 p-10 shadow-2xl">
+          <Settings size={48} className="text-amber-500 mx-auto mb-4 animate-pulse" />
+          <h2 className="text-2xl font-dst text-[#f5e6d3] uppercase mb-4 text-center">Configuração do Banco</h2>
+          <p className="text-xs text-[#f5e6d3]/60 mb-8 leading-relaxed text-center">
+            Para habilitar o login e salvamento, insira as credenciais do seu projeto Supabase abaixo.
           </p>
-          <div className="bg-[#1a1612] p-4 text-left border border-[#3d352d] mb-6">
-            <p className="text-[10px] text-amber-500 font-mono mb-2 uppercase">Adicione estas variáveis no Vercel:</p>
-            <code className="text-[9px] text-[#f5e6d3]/40 font-mono block">SUPABASE_URL</code>
-            <code className="text-[9px] text-[#f5e6d3]/40 font-mono block">SUPABASE_ANON_KEY</code>
+          
+          <div className="space-y-4 mb-8">
+            <div className="space-y-1">
+              <label className="text-[9px] font-dst text-amber-500 uppercase tracking-widest">Project URL</label>
+              <input 
+                type="text" 
+                value={manualUrl}
+                onChange={(e) => setManualUrl(e.target.value)}
+                placeholder="https://xyz.supabase.co"
+                className="w-full bg-[#1a1612] border-2 border-[#3d352d] px-3 py-2 text-xs text-[#f5e6d3] outline-none focus:border-amber-600"
+              />
+            </div>
+            <div className="space-y-1">
+              <label className="text-[9px] font-dst text-amber-500 uppercase tracking-widest">Anon Key</label>
+              <input 
+                type="password" 
+                value={manualKey}
+                onChange={(e) => setManualKey(e.target.value)}
+                placeholder="eyJh..."
+                className="w-full bg-[#1a1612] border-2 border-[#3d352d] px-3 py-2 text-xs text-[#f5e6d3] outline-none focus:border-amber-600"
+              />
+            </div>
           </div>
+
           <button 
-            onClick={() => window.location.reload()}
-            className="w-full bg-[#f5e6d3] text-[#1a1612] py-3 font-dst uppercase tracking-widest border-2 border-[#3d352d]"
+            onClick={handleSaveConfig}
+            className="w-full bg-amber-600 hover:bg-amber-500 text-[#1a1612] py-4 font-dst uppercase tracking-widest border-4 border-[#3d352d] shadow-lg flex items-center justify-center gap-2 transition-all active:scale-95"
           >
-            Tentar Novamente
+            <Save size={18} />
+            Salvar Configuração
           </button>
+          
+          <p className="mt-6 text-[9px] text-[#f5e6d3]/30 text-center uppercase tracking-tighter">
+            * Estas chaves ficarão salvas apenas no seu navegador.
+          </p>
         </div>
       </div>
     );
