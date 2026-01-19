@@ -1,7 +1,7 @@
 
 import React, { useState } from 'react';
-import { supabase, saveManualConfig } from '../lib/supabase';
-import { Skull, Mail, Lock, Loader2, LogIn, AlertTriangle, Settings, Save } from 'lucide-react';
+import { supabase } from '../lib/supabase';
+import { Skull, Mail, Lock, Loader2, LogIn } from 'lucide-react';
 
 export const Auth: React.FC = () => {
   const [loading, setLoading] = useState(false);
@@ -10,17 +10,14 @@ export const Auth: React.FC = () => {
   const [isSignUp, setIsSignUp] = useState(false);
   const [message, setMessage] = useState<{ type: 'error' | 'success', text: string } | null>(null);
 
-  // Estados para configuração manual
-  const [manualUrl, setManualUrl] = useState('');
-  const [manualKey, setManualKey] = useState('');
-
   const handleAuth = async (e: React.FormEvent) => {
     e.preventDefault();
     
+    // Verificação em tempo de execução
     if (!supabase) {
       setMessage({ 
         type: 'error', 
-        text: 'Erro crítico: Cliente Supabase não inicializado.' 
+        text: 'Erro: O Supabase não foi configurado corretamente na Vercel (SUPABASE_URL / SUPABASE_ANON_KEY ausentes).' 
       });
       return;
     }
@@ -36,75 +33,20 @@ export const Auth: React.FC = () => {
       if (error) throw error;
       
       if (isSignUp) {
-        setMessage({ type: 'success', text: 'Verifique seu e-mail para confirmar o cadastro!' });
+        setMessage({ type: 'success', text: 'Sucesso! Verifique seu e-mail para confirmar o cadastro.' });
       }
     } catch (error: any) {
-      setMessage({ type: 'error', text: error.message || 'Erro na autenticação' });
+      console.error("Erro de Autenticação:", error);
+      setMessage({ type: 'error', text: error.message || 'Erro na comunicação com o servidor.' });
     } finally {
       setLoading(false);
     }
   };
 
-  const handleSaveConfig = () => {
-    if (!manualUrl || !manualKey) {
-      alert('Por favor, preencha ambos os campos.');
-      return;
-    }
-    saveManualConfig(manualUrl, manualKey);
-  };
-
-  if (!supabase) {
-    return (
-      <div className="min-h-screen bg-[#1a1612] flex items-center justify-center p-6">
-        <div className="max-w-md w-full bg-[#25201b] border-4 border-amber-900/50 p-10 shadow-2xl">
-          <Settings size={48} className="text-amber-500 mx-auto mb-4 animate-pulse" />
-          <h2 className="text-2xl font-dst text-[#f5e6d3] uppercase mb-4 text-center">Configuração do Banco</h2>
-          <p className="text-xs text-[#f5e6d3]/60 mb-8 leading-relaxed text-center">
-            Para habilitar o login e salvamento, insira as credenciais do seu projeto Supabase abaixo.
-          </p>
-          
-          <div className="space-y-4 mb-8">
-            <div className="space-y-1">
-              <label className="text-[9px] font-dst text-amber-500 uppercase tracking-widest">Project URL</label>
-              <input 
-                type="text" 
-                value={manualUrl}
-                onChange={(e) => setManualUrl(e.target.value)}
-                placeholder="https://xyz.supabase.co"
-                className="w-full bg-[#1a1612] border-2 border-[#3d352d] px-3 py-2 text-xs text-[#f5e6d3] outline-none focus:border-amber-600"
-              />
-            </div>
-            <div className="space-y-1">
-              <label className="text-[9px] font-dst text-amber-500 uppercase tracking-widest">Anon Key</label>
-              <input 
-                type="password" 
-                value={manualKey}
-                onChange={(e) => setManualKey(e.target.value)}
-                placeholder="eyJh..."
-                className="w-full bg-[#1a1612] border-2 border-[#3d352d] px-3 py-2 text-xs text-[#f5e6d3] outline-none focus:border-amber-600"
-              />
-            </div>
-          </div>
-
-          <button 
-            onClick={handleSaveConfig}
-            className="w-full bg-amber-600 hover:bg-amber-500 text-[#1a1612] py-4 font-dst uppercase tracking-widest border-4 border-[#3d352d] shadow-lg flex items-center justify-center gap-2 transition-all active:scale-95"
-          >
-            <Save size={18} />
-            Salvar Configuração
-          </button>
-          
-          <p className="mt-6 text-[9px] text-[#f5e6d3]/30 text-center uppercase tracking-tighter">
-            * Estas chaves ficarão salvas apenas no seu navegador.
-          </p>
-        </div>
-      </div>
-    );
-  }
-
   return (
     <div className="min-h-screen bg-[#1a1612] flex items-center justify-center p-6">
       <div className="max-w-md w-full bg-[#25201b] border-4 border-[#3d352d] p-10 shadow-2xl relative overflow-hidden">
+        {/* Cantoneiras Decorativas */}
         <div className="absolute top-0 left-0 w-4 h-4 border-t-2 border-l-2 border-amber-600/30" />
         <div className="absolute bottom-0 right-0 w-4 h-4 border-b-2 border-r-2 border-amber-600/30" />
 
@@ -127,7 +69,7 @@ export const Auth: React.FC = () => {
               value={email}
               onChange={(e) => setEmail(e.target.value)}
               className="w-full bg-[#1a1612] border-2 border-[#3d352d] px-4 py-3 font-dst text-[#f5e6d3] outline-none focus:border-amber-600 transition-colors"
-              placeholder="seu@email.com"
+              placeholder="giovanapereira@gmail.com"
             />
           </div>
 
@@ -146,7 +88,11 @@ export const Auth: React.FC = () => {
           </div>
 
           {message && (
-            <div className={`p-3 text-[10px] font-dst uppercase tracking-widest border-2 ${message.type === 'error' ? 'bg-red-900/20 border-red-900/50 text-red-400' : 'bg-emerald-900/20 border-emerald-900/50 text-emerald-400'}`}>
+            <div className={`p-4 text-[10px] font-dst uppercase tracking-widest border-2 leading-relaxed ${
+              message.type === 'error' 
+                ? 'bg-red-900/20 border-red-900/50 text-red-400' 
+                : 'bg-emerald-900/20 border-emerald-900/50 text-emerald-400'
+            }`}>
               {message.text}
             </div>
           )}
@@ -154,7 +100,7 @@ export const Auth: React.FC = () => {
           <button 
             type="submit"
             disabled={loading}
-            className="w-full bg-[#f5e6d3] hover:bg-white text-[#1a1612] py-4 font-dst text-xl uppercase tracking-widest border-4 border-[#3d352d] shadow-lg transition-all flex items-center justify-center gap-3 active:scale-95"
+            className="w-full bg-[#f5e6d3] hover:bg-white text-[#1a1612] py-4 font-dst text-xl uppercase tracking-widest border-4 border-[#3d352d] shadow-lg transition-all flex items-center justify-center gap-3 active:scale-95 disabled:opacity-50"
           >
             {loading ? <Loader2 size={24} className="animate-spin" /> : <LogIn size={20} />}
             {isSignUp ? 'Criar Conta' : 'Entrar na Run'}
@@ -163,7 +109,10 @@ export const Auth: React.FC = () => {
 
         <div className="mt-8 pt-6 border-t border-[#3d352d] text-center">
           <button 
-            onClick={() => setIsSignUp(!isSignUp)}
+            onClick={() => {
+              setIsSignUp(!isSignUp);
+              setMessage(null);
+            }}
             className="text-[10px] font-dst text-amber-500 uppercase tracking-widest hover:underline"
           >
             {isSignUp ? 'Já tem conta? Faça Login' : 'Novo por aqui? Criar Cadastro'}
