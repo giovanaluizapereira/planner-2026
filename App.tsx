@@ -1,30 +1,26 @@
+
 import React, { useState, useCallback, useMemo, useEffect, useRef } from 'react';
-import { RefreshCw, Trophy, Loader2, Upload, LayoutPanelLeft, Key, ExternalLink } from 'lucide-react';
+import { RefreshCw, Trophy, Loader2, Key, ExternalLink } from 'lucide-react';
 import ManualEntry from './components/ManualEntry';
 import RankingChart from './components/RankingChart';
 import GoalTracker from './components/GoalTracker';
 import DSTStats from './components/DSTStats';
 import LevelUpModal from './components/LevelUpModal';
-import WheelUploader from './components/WheelUploader';
 import { WheelData, Goal } from './types';
 import { supabase } from './lib/supabase';
-import { analyzeWheelImage } from './services/geminiService';
 
 const App: React.FC = () => {
   const [baseData, setBaseData] = useState<WheelData[]>([]);
   const [isStarted, setIsStarted] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
-  const [isAnalyzing, setIsAnalyzing] = useState(false);
-  const [currentImage, setCurrentImage] = useState<string | null>(null);
   const [lastSaved, setLastSaved] = useState<Date | null>(null);
-  const [entryMode, setEntryMode] = useState<'upload' | 'manual'>('upload');
-  const [hasApiKey, setHasApiKey] = useState<boolean>(true); // Inicialmente assume que tem
+  const [hasApiKey, setHasApiKey] = useState<boolean>(true);
   
   const [levelUpInfo, setLevelUpInfo] = useState<{ area: string, days: number, level: number } | null>(null);
   const prevScoresRef = useRef<Record<string, number>>({});
   const startTimeRef = useRef<number>(Date.now());
 
-  // Verifica se a API KEY está disponível
+  // Verifica se a API KEY está disponível para as funcionalidades de IA (metas, etc)
   useEffect(() => {
     const checkKey = async () => {
       if (!process.env.API_KEY && window.aistudio) {
@@ -38,7 +34,7 @@ const App: React.FC = () => {
   const handleOpenKeySelector = async () => {
     if (window.aistudio) {
       await window.aistudio.openSelectKey();
-      setHasApiKey(true); // Assume sucesso após abrir o diálogo
+      setHasApiKey(true);
     }
   };
 
@@ -79,25 +75,6 @@ const App: React.FC = () => {
     setIsStarted(true);
     saveToSupabase(initialData, 0);
   }, [saveToSupabase]);
-
-  const handleImageUpload = async (base64: string) => {
-    setCurrentImage(base64);
-    setIsAnalyzing(true);
-    try {
-      const results = await analyzeWheelImage(base64);
-      if (results && results.length > 0) {
-        handleConfirmScores(results);
-      }
-    } catch (error: any) {
-      console.error("Erro no processamento:", error);
-      if (error.message?.includes("not found")) {
-        setHasApiKey(false); // Força re-seleção se a chave falhar
-      }
-      alert("Erro ao analisar imagem. Certifique-se de que a chave API está configurada corretamente.");
-    } finally {
-      setIsAnalyzing(false);
-    }
-  };
 
   const evolvedData = useMemo(() => {
     return baseData.map(item => {
@@ -147,9 +124,9 @@ const App: React.FC = () => {
           <div className="w-20 h-20 bg-amber-600 rounded-full flex items-center justify-center mx-auto mb-8 border-4 border-[#f5e6d3] shadow-lg">
             <Key size={40} className="text-[#1a1612]" />
           </div>
-          <h2 className="text-3xl font-dst text-[#f5e6d3] mb-4 uppercase tracking-tighter">Conexão com IA Necessária</h2>
+          <h2 className="text-3xl font-dst text-[#f5e6d3] mb-4 uppercase tracking-tighter">Conexão Necessária</h2>
           <p className="text-[#f5e6d3]/60 mb-8 text-sm leading-relaxed">
-            Para analisar sua Roda da Vida via imagem, precisamos conectar com o Google Gemini. Por favor, selecione sua chave API de um projeto com faturamento ativo.
+            Para que as inteligências do Planner 2026 funcionem, precisamos de uma conexão ativa com a API Gemini.
           </p>
           <button 
             onClick={handleOpenKeySelector}
@@ -201,11 +178,11 @@ const App: React.FC = () => {
           <div className="flex items-center gap-4">
             {isStarted && (
               <button 
-                onClick={() => window.confirm("Reiniciar run?") && setBaseData([])}
+                onClick={() => window.confirm("Reiniciar jornada?") && setBaseData([])}
                 className="flex items-center gap-2 bg-[#3d352d] hover:bg-[#4d443a] px-5 py-2 rounded-[4px] border border-[#f5e6d3]/20 transition-all text-xs font-dst uppercase tracking-widest text-[#f5e6d3]"
               >
                 <RefreshCw size={14} />
-                New Run
+                Reset Run
               </button>
             )}
           </div>
@@ -214,42 +191,15 @@ const App: React.FC = () => {
 
       <main className="max-w-7xl mx-auto px-6 pt-12">
         {!isStarted ? (
-          <section className="max-w-4xl mx-auto mt-12 mb-20 space-y-12">
+          <section className="max-w-6xl mx-auto mt-12 mb-20 space-y-12">
             <div className="text-center">
-              <h2 className="text-6xl font-dst text-[#f5e6d3] mb-6 tracking-tighter drop-shadow-lg uppercase">Mapeie sua Jornada</h2>
-              <p className="text-[#f5e6d3]/60 font-dst text-lg max-w-2xl mx-auto leading-relaxed italic">
-                Sua sobrevivência em 2026 começa com um diagnóstico honesto.
+              <h2 className="text-6xl font-dst text-[#f5e6d3] mb-4 tracking-tighter drop-shadow-lg uppercase italic">Diagnóstico Inicial</h2>
+              <p className="text-[#f5e6d3]/60 font-dst text-lg max-w-2xl mx-auto leading-relaxed italic mb-8">
+                Avalie cada área da sua vida. Seja honesto para que possamos traçar a melhor estratégia de sobrevivência em 2026.
               </p>
             </div>
 
-            <div className="flex justify-center gap-4">
-              <button 
-                onClick={() => setEntryMode('upload')}
-                className={`flex items-center gap-3 px-6 py-3 font-dst uppercase tracking-widest text-sm border-2 transition-all ${entryMode === 'upload' ? 'bg-amber-600 text-[#1a1612] border-amber-500' : 'bg-[#1a1612] text-[#f5e6d3]/40 border-[#3d352d]'}`}
-              >
-                <Upload size={18} /> Subir Imagem
-              </button>
-              <button 
-                onClick={() => setEntryMode('manual')}
-                className={`flex items-center gap-3 px-6 py-3 font-dst uppercase tracking-widest text-sm border-2 transition-all ${entryMode === 'manual' ? 'bg-amber-600 text-[#1a1612] border-amber-500' : 'bg-[#1a1612] text-[#f5e6d3]/40 border-[#3d352d]'}`}
-              >
-                <LayoutPanelLeft size={18} /> Notas Manuais
-              </button>
-            </div>
-
-            <div className="bg-[#1a1612] p-8 border-4 border-[#3d352d] shadow-2xl">
-              {entryMode === 'upload' ? (
-                <div className="space-y-8">
-                  <WheelUploader 
-                    onImageUpload={handleImageUpload} 
-                    isAnalyzing={isAnalyzing} 
-                    currentImage={currentImage} 
-                  />
-                </div>
-              ) : (
-                <ManualEntry onConfirm={handleConfirmScores} />
-              )}
-            </div>
+            <ManualEntry onConfirm={handleConfirmScores} />
           </section>
         ) : (
           <div className="space-y-16">
