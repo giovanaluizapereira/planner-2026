@@ -89,62 +89,86 @@ export const CATEGORY_QUESTIONS: Record<string, string[]> = {
   'Carreira & Trabalho': [
     'Quão satisfeito você está com suas responsabilidades atuais?',
     'Você sente que tem oportunidades reais de crescimento?',
-    'Seu trabalho está alinhado com seu propósito de vida?'
+    'Seu trabalho está alinhado com seu propósito de vida?',
+    'Como está o equilíbrio entre sua vida profissional e pessoal?',
+    'Você se sente reconhecido e valorizado pelo seu desempenho?'
   ],
   'Finanças & Dinheiro': [
     'Sua renda atual cobre suas necessidades e sobra para o futuro?',
     'Quão sob controle estão suas dívidas e gastos mensais?',
-    'Você se sente seguro financeiramente para emergências?'
+    'Você se sente seguro financeiramente para emergências?',
+    'Você possui um plano claro de investimentos ou poupança?',
+    'Sua relação com o dinheiro gera tranquilidade ou estresse?'
   ],
   'Saúde & Fitness': [
     'Quão satisfeito você está com sua disposição física diária?',
     'Como você avalia sua qualidade de sono e alimentação?',
-    'Com que frequência você pratica exercícios ou cuida do corpo?'
+    'Com que frequência você pratica exercícios ou cuida do corpo?',
+    'Como está sua imunidade e frequência de problemas de saúde?',
+    'Você se sente confortável e feliz com sua imagem corporal?'
   ],
   'Família': [
     'Como está a qualidade do tempo que você passa com seus familiares?',
     'Há harmonia e suporte mútuo nas relações familiares?',
-    'Você se sente presente na vida das pessoas que ama?'
+    'Você se sente presente na vida das pessoas que ama?',
+    'Como você lida com conflitos ou desentendimentos em família?',
+    'Você sente que suas raízes familiares te dão força?'
   ],
   'Amor & Romance': [
     'Quão realizado você se sente em sua vida afetiva/romântica?',
     'Existe parceria, respeito e cumplicidade no relacionamento?',
-    'Você se sente amado e valorizado?'
+    'Você se sente amado e valorizado?',
+    'Como está a comunicação e a intimidade com seu parceiro(a)?',
+    'Você dedica tempo de qualidade para nutrir o romance?'
   ],
   'Vida Social & Amizades': [
     'Você possui amigos em quem pode confiar plenamente?',
     'Quão ativa é sua vida social fora do ambiente de trabalho?',
-    'Você se sente pertencente a um grupo ou comunidade?'
+    'Você se sente pertencente a um grupo ou comunidade?',
+    'Suas amizades trazem alegria e inspiração para sua vida?',
+    'Você consegue ser você mesmo quando está com seus amigos?'
   ],
   'Crescimento Pessoal': [
     'Você está aprendendo coisas novas regularmente?',
     'Quão satisfeito está com seu desenvolvimento intelectual?',
-    'Você investe tempo em ler ou fazer cursos de interesse?'
+    'Você investe tempo em ler ou fazer cursos de interesse?',
+    'Você sente que está evoluindo como ser humano?',
+    'Você tem clareza sobre suas metas e objetivos de vida?'
   ],
   'Recreação & Diversão': [
     'Você reserva tempo de qualidade para hobbies e diversão?',
     'Sua vida tem momentos genuínos de relaxamento e prazer?',
-    'Quão satisfeito você está com suas últimas férias ou folgas?'
+    'Quão satisfeito você está com suas últimas férias ou folgas?',
+    'Você se permite rir e brincar sem culpa?',
+    'Seus momentos de lazer realmente recarregam suas energias?'
   ],
   'Ambiente Físico': [
     'Sua casa é um lugar de descanso e conforto real?',
     'A organização dos seus espaços ajuda na sua rotina?',
-    'Você se sente seguro e produtivo nos lugares que frequenta?'
+    'Você se sente seguro e produtivo nos lugares que frequenta?',
+    'Seu ambiente reflete sua personalidade e valores?',
+    'Você cuida da limpeza e manutenção dos seus pertences?'
   ],
   'Contribuição & Impacto': [
     'Você sente que seu trabalho ou ações ajudam outras pessoas?',
     'Você participa de projetos voluntários ou causas sociais?',
-    'Quão satisfeito você está com sua contribuição para o mundo?'
+    'Quão satisfeito você está com sua contribuição para o mundo?',
+    'Você costuma praticar atos generosos sem esperar nada em troca?',
+    'Você se sente parte da solução dos problemas da sociedade?'
   ],
   'Espiritualidade': [
     'Você sente conexão com algo maior ou paz interior?',
     'Quão frequentes são seus momentos de reflexão ou oração?',
-    'Sua vida parece ter um significado profundo e transcendente?'
+    'Sua vida parece ter um significado profundo e transcendente?',
+    'Você vive de acordo com seus valores espirituais?',
+    'Como você lida com as questões existenciais da vida?'
   ],
   'Saúde Mental & Emocional': [
     'Quão bem você lida com suas emoções e estresse?',
     'Sua autoestima está em um nível saudável?',
-    'Você reserva tempo para o autoconhecimento?'
+    'Você reserva tempo para o autoconhecimento?',
+    'Como você avalia sua resiliência diante de desafios?',
+    'Você sente que tem clareza mental e paz de espírito?'
   ]
 };
 
