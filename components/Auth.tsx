@@ -1,7 +1,7 @@
 
 import React, { useState } from 'react';
 import { supabase } from '../lib/supabase';
-import { Skull, Mail, Lock, Loader2, LogIn } from 'lucide-react';
+import { Skull, Mail, Lock, Loader2, LogIn, AlertTriangle, ExternalLink } from 'lucide-react';
 
 export const Auth: React.FC = () => {
   const [loading, setLoading] = useState(false);
@@ -12,14 +12,17 @@ export const Auth: React.FC = () => {
 
   const handleAuth = async (e: React.FormEvent) => {
     e.preventDefault();
-    setLoading(true);
-    setMessage(null);
-
+    
     if (!supabase) {
-      setMessage({ type: 'error', text: 'Supabase não configurado.' });
-      setLoading(false);
+      setMessage({ 
+        type: 'error', 
+        text: 'Erro: Variáveis SUPABASE_URL ou SUPABASE_ANON_KEY não encontradas no ambiente.' 
+      });
       return;
     }
+
+    setLoading(true);
+    setMessage(null);
 
     try {
       const { error } = isSignUp 
@@ -38,10 +41,34 @@ export const Auth: React.FC = () => {
     }
   };
 
+  if (!supabase) {
+    return (
+      <div className="min-h-screen bg-[#1a1612] flex items-center justify-center p-6">
+        <div className="max-w-md w-full bg-[#25201b] border-4 border-red-900/50 p-10 shadow-2xl text-center">
+          <AlertTriangle size={48} className="text-red-500 mx-auto mb-4" />
+          <h2 className="text-2xl font-dst text-[#f5e6d3] uppercase mb-4">Configuração Pendente</h2>
+          <p className="text-sm text-[#f5e6d3]/60 mb-8 leading-relaxed">
+            O banco de dados (Supabase) não foi detectado. Para compartilhar com outras pessoas, você precisa configurar as chaves no seu painel da Vercel.
+          </p>
+          <div className="bg-[#1a1612] p-4 text-left border border-[#3d352d] mb-6">
+            <p className="text-[10px] text-amber-500 font-mono mb-2 uppercase">Adicione estas variáveis no Vercel:</p>
+            <code className="text-[9px] text-[#f5e6d3]/40 font-mono block">SUPABASE_URL</code>
+            <code className="text-[9px] text-[#f5e6d3]/40 font-mono block">SUPABASE_ANON_KEY</code>
+          </div>
+          <button 
+            onClick={() => window.location.reload()}
+            className="w-full bg-[#f5e6d3] text-[#1a1612] py-3 font-dst uppercase tracking-widest border-2 border-[#3d352d]"
+          >
+            Tentar Novamente
+          </button>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="min-h-screen bg-[#1a1612] flex items-center justify-center p-6">
       <div className="max-w-md w-full bg-[#25201b] border-4 border-[#3d352d] p-10 shadow-2xl relative overflow-hidden">
-        {/* Detalhes de canto estilo DST */}
         <div className="absolute top-0 left-0 w-4 h-4 border-t-2 border-l-2 border-amber-600/30" />
         <div className="absolute bottom-0 right-0 w-4 h-4 border-b-2 border-r-2 border-amber-600/30" />
 
