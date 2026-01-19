@@ -1,26 +1,48 @@
 
 import React, { useState, useCallback, useMemo, useEffect, useRef } from 'react';
-import { RefreshCw, Trophy, Loader2, Key, ExternalLink } from 'lucide-react';
+import { RefreshCw, Trophy, Loader2, Key, ExternalLink, LogOut, User } from 'lucide-react';
 import ManualEntry from './components/ManualEntry';
 import RankingChart from './components/RankingChart';
 import GoalTracker from './components/GoalTracker';
 import DSTStats from './components/DSTStats';
 import LevelUpModal from './components/LevelUpModal';
+import { Auth } from './components/Auth';
 import { WheelData, Goal } from './types';
 import { supabase } from './lib/supabase';
 
 const App: React.FC = () => {
+  const [session, setSession] = useState<any>(null);
   const [baseData, setBaseData] = useState<WheelData[]>([]);
   const [isStarted, setIsStarted] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
   const [lastSaved, setLastSaved] = useState<Date | null>(null);
   const [hasApiKey, setHasApiKey] = useState<boolean>(true);
+  const [isLoadingSession, setIsLoadingSession] = useState(true);
   
   const [levelUpInfo, setLevelUpInfo] = useState<{ area: string, days: number, level: number } | null>(null);
   const prevScoresRef = useRef<Record<string, number>>({});
   const startTimeRef = useRef<number>(Date.now());
 
-  // Verifica se a API KEY está disponível para as funcionalidades de IA (metas, etc)
+  // Gerenciamento de Sessão Supabase
+  useEffect(() => {
+    if (!supabase) {
+      setIsLoadingSession(false);
+      return;
+    }
+
+    supabase.auth.getSession().then(({ data: { session } }) => {
+      setSession(session);
+      setIsLoadingSession(false);
+    });
+
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
+      setSession(session);
+    });
+
+    return () => subscription.unsubscribe();
+  }, []);
+
+  // Verifica Gemini API KEY
   useEffect(() => {
     const checkKey = async () => {
       if (!process.env.API_KEY && window.aistudio) {
@@ -38,35 +60,50 @@ const App: React.FC = () => {
     }
   };
 
-  useEffect(() => {
-    const loadData = async () => {
-      if (!supabase) return;
-      const { data, error } = await supabase
-        .from('planner_runs')
-        .select('*')
-        .order('created_at', { ascending: false })
-        .limit(1)
-        .single();
+  const loadData = useCallback(async () => {
+    if (!supabase || !session?.user) return;
+    
+    const { data, error } = await supabase
+      .from('planner_runs')
+      .select('*')
+      .eq('user_id', session.user.id) // Filtro crucial de segurança
+      .order('created_at', { ascending: false })
+      .limit(1)
+      .single();
 
-      if (data && !error) {
-        setBaseData(data.user_data);
-        setIsStarted(true);
-        setLastSaved(new Date(data.created_at));
-        const scores: Record<string, number> = {};
-        data.user_data.forEach((d: any) => scores[d.category] = d.score);
-        prevScoresRef.current = scores;
-      }
-    };
+    if (data && !error) {
+      setBaseData(data.user_data);
+      setIsStarted(true);
+      setLastSaved(new Date(data.created_at));
+      const scores: Record<string, number> = {};
+      data.user_data.forEach((d: any) => scores[d.category] = d.score);
+      prevScoresRef.current = scores;
+    } else {
+      // Se não houver dados, garante que o estado inicial esteja limpo
+      setBaseData([]);
+      setIsStarted(false);
+    }
+  }, [session]);
+
+  useEffect(() => {
     loadData();
-  }, []);
+  }, [loadData]);
 
   const saveToSupabase = useCallback(async (currentData: WheelData[], xp: number) => {
-    if (!supabase || currentData.length === 0) return;
+    if (!supabase || !session?.user || currentData.length === 0) return;
     setIsSaving(true);
-    await supabase.from('planner_runs').insert([{ user_data: currentData, total_xp: xp }]);
+    
+    // O user_id é injetado automaticamente pelo Supabase devido ao DEFAULT auth.uid() 
+    // ou podemos passar explicitamente
+    await supabase.from('planner_runs').insert([{ 
+      user_data: currentData, 
+      total_xp: xp,
+      user_id: session.user.id 
+    }]);
+    
     setLastSaved(new Date());
     setIsSaving(false);
-  }, []);
+  }, [session]);
 
   const handleConfirmScores = useCallback((results: { category: string; score: number }[]) => {
     startTimeRef.current = Date.now();
@@ -98,7 +135,7 @@ const App: React.FC = () => {
   }, [baseData, evolvedData]);
 
   useEffect(() => {
-    if (baseData.length === 0) return;
+    if (baseData.length === 0 || !isStarted) return;
     let shouldSave = false;
     evolvedData.forEach(item => {
       const prevScore = prevScoresRef.current[item.category];
@@ -111,11 +148,27 @@ const App: React.FC = () => {
       prevScoresRef.current[item.category] = newScore;
     });
     if (shouldSave) saveToSupabase(baseData, totalXP);
-  }, [evolvedData, baseData, totalXP, saveToSupabase]);
+  }, [evolvedData, baseData, totalXP, saveToSupabase, isStarted]);
 
   const updateCategoryGoals = (categoryName: string, goals: Goal[]) => {
     setBaseData(prev => prev.map(c => c.category === categoryName ? { ...c, goals } : c));
   };
+
+  const handleLogout = () => {
+    if (supabase) supabase.auth.signOut();
+  };
+
+  if (isLoadingSession) {
+    return (
+      <div className="min-h-screen bg-[#1a1612] flex items-center justify-center">
+        <Loader2 className="animate-spin text-amber-500" size={48} />
+      </div>
+    );
+  }
+
+  if (!session) {
+    return <Auth />;
+  }
 
   if (!hasApiKey && !process.env.API_KEY) {
     return (
@@ -176,13 +229,26 @@ const App: React.FC = () => {
           </div>
           
           <div className="flex items-center gap-4">
+            <div className="hidden md:flex flex-col items-end mr-2">
+              <span className="text-[9px] text-amber-500 uppercase tracking-widest font-dst font-black">Survivor</span>
+              <span className="text-[10px] text-[#f5e6d3]/40 lowercase font-dst truncate max-w-[120px]">{session.user.email}</span>
+            </div>
+            
+            <button 
+              onClick={handleLogout}
+              className="p-2 text-[#f5e6d3]/40 hover:text-red-500 transition-colors"
+              title="Sair"
+            >
+              <LogOut size={20} />
+            </button>
+
             {isStarted && (
               <button 
                 onClick={() => window.confirm("Reiniciar jornada?") && setBaseData([])}
                 className="flex items-center gap-2 bg-[#3d352d] hover:bg-[#4d443a] px-5 py-2 rounded-[4px] border border-[#f5e6d3]/20 transition-all text-xs font-dst uppercase tracking-widest text-[#f5e6d3]"
               >
                 <RefreshCw size={14} />
-                Reset Run
+                <span className="hidden sm:inline">Reset Run</span>
               </button>
             )}
           </div>
@@ -195,7 +261,7 @@ const App: React.FC = () => {
             <div className="text-center">
               <h2 className="text-6xl font-dst text-[#f5e6d3] mb-4 tracking-tighter drop-shadow-lg uppercase italic">Diagnóstico Inicial</h2>
               <p className="text-[#f5e6d3]/60 font-dst text-lg max-w-2xl mx-auto leading-relaxed italic mb-8">
-                Avalie cada área da sua vida. Seja honesto para que possamos traçar a melhor estratégia de sobrevivência em 2026.
+                Olá, {session.user.email?.split('@')[0]}. Avalie cada área da sua vida para traçar sua estratégia de 2026.
               </p>
             </div>
 
