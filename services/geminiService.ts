@@ -6,7 +6,7 @@ export const analyzeWheelImage = async (base64Image: string): Promise<WheelData[
   const apiKey = process.env.API_KEY;
   
   if (!apiKey) {
-    throw new Error("API_KEY não encontrada no ambiente.");
+    throw new Error("API_KEY não encontrada no ambiente. Verifique as configurações do Vercel.");
   }
 
   const ai = new GoogleGenAI({ apiKey });
@@ -17,27 +17,26 @@ export const analyzeWheelImage = async (base64Image: string): Promise<WheelData[
   const base64Data = base64Image.includes(',') ? base64Image.split(',')[1] : base64Image;
 
   try {
+    // Usando gemini-3-flash-preview conforme diretrizes para tarefas básicas de texto/visão
     const response = await ai.models.generateContent({
-      model: 'gemini-2.5-flash-preview', // Modelo otimizado para multimodalidade
-      contents: [
-        {
-          parts: [
-            {
-              text: `Analise esta imagem da Roda da Vida. 
-              Extraia as categorias e as notas (de 0 a 10). 
-              Se as notas não estiverem explícitas, estime pelo preenchimento visual.
-              Retorne APENAS um array JSON puro, sem formatação markdown, seguindo este esquema:
-              [{"category": "Nome", "score": 7.5}]`
-            },
-            {
-              inlineData: {
-                mimeType: mimeType,
-                data: base64Data
-              }
+      model: 'gemini-3-flash-preview',
+      contents: {
+        parts: [
+          {
+            text: `Analise esta imagem de uma Roda da Vida. 
+            Identifique as categorias escritas e as notas de 0 a 10 atribuídas a cada uma. 
+            Ignore qualquer texto que não seja uma categoria da roda.
+            Retorne APENAS um array JSON puro com o seguinte formato:
+            [{"category": "Nome da Área", "score": 7}]`
+          },
+          {
+            inlineData: {
+              mimeType: mimeType,
+              data: base64Data
             }
-          ]
-        }
-      ],
+          }
+        ]
+      },
       config: {
         responseMimeType: "application/json",
         responseSchema: {
@@ -54,13 +53,18 @@ export const analyzeWheelImage = async (base64Image: string): Promise<WheelData[
       }
     });
 
-    const textResponse = response.text || "";
-    // Limpeza extra caso a IA ignore o responseMimeType e envie markdown
+    const textResponse = response.text;
+    if (!textResponse) {
+      throw new Error("A IA retornou uma resposta vazia.");
+    }
+
+    // Limpeza de possíveis formatações markdown que a IA possa incluir por engano
     const jsonString = textResponse.replace(/```json|```/g, "").trim();
     
     return JSON.parse(jsonString);
-  } catch (e) {
-    console.error("Erro detalhado na análise da IA:", e);
-    throw e;
+  } catch (e: any) {
+    console.error("ERRO DETALHADO GEMINI:", e);
+    // Repassa o erro com mensagem amigável
+    throw new Error(e.message || "Falha na comunicação com a IA.");
   }
 };
