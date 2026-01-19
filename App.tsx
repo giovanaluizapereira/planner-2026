@@ -1,5 +1,5 @@
 import React, { useState, useCallback, useMemo, useEffect, useRef } from 'react';
-import { RefreshCw, Trophy, Loader2, Upload, LayoutPanelLeft } from 'lucide-react';
+import { RefreshCw, Trophy, Loader2, Upload, LayoutPanelLeft, Key, ExternalLink } from 'lucide-react';
 import ManualEntry from './components/ManualEntry';
 import RankingChart from './components/RankingChart';
 import GoalTracker from './components/GoalTracker';
@@ -18,15 +18,33 @@ const App: React.FC = () => {
   const [currentImage, setCurrentImage] = useState<string | null>(null);
   const [lastSaved, setLastSaved] = useState<Date | null>(null);
   const [entryMode, setEntryMode] = useState<'upload' | 'manual'>('upload');
+  const [hasApiKey, setHasApiKey] = useState<boolean>(true); // Inicialmente assume que tem
   
   const [levelUpInfo, setLevelUpInfo] = useState<{ area: string, days: number, level: number } | null>(null);
   const prevScoresRef = useRef<Record<string, number>>({});
   const startTimeRef = useRef<number>(Date.now());
 
+  // Verifica se a API KEY está disponível
+  useEffect(() => {
+    const checkKey = async () => {
+      if (!process.env.API_KEY && window.aistudio) {
+        const selected = await window.aistudio.hasSelectedApiKey();
+        setHasApiKey(selected);
+      }
+    };
+    checkKey();
+  }, []);
+
+  const handleOpenKeySelector = async () => {
+    if (window.aistudio) {
+      await window.aistudio.openSelectKey();
+      setHasApiKey(true); // Assume sucesso após abrir o diálogo
+    }
+  };
+
   useEffect(() => {
     const loadData = async () => {
       if (!supabase) return;
-      
       const { data, error } = await supabase
         .from('planner_runs')
         .select('*')
@@ -48,32 +66,16 @@ const App: React.FC = () => {
 
   const saveToSupabase = useCallback(async (currentData: WheelData[], xp: number) => {
     if (!supabase || currentData.length === 0) return;
-    
     setIsSaving(true);
-    const { error } = await supabase
-      .from('planner_runs')
-      .insert([{ 
-        user_data: currentData, 
-        total_xp: xp 
-      }]);
-
-    if (!error) {
-      setLastSaved(new Date());
-    }
+    await supabase.from('planner_runs').insert([{ user_data: currentData, total_xp: xp }]);
+    setLastSaved(new Date());
     setIsSaving(false);
   }, []);
 
   const handleConfirmScores = useCallback((results: { category: string; score: number }[]) => {
     startTimeRef.current = Date.now();
-    const initialData = results.map(r => ({
-      ...r,
-      goals: []
-    }));
+    const initialData = results.map(r => ({ ...r, goals: [] }));
     setBaseData(initialData);
-    
-    const scores: Record<string, number> = {};
-    initialData.forEach(d => scores[d.category] = d.score);
-    prevScoresRef.current = scores;
     setIsStarted(true);
     saveToSupabase(initialData, 0);
   }, [saveToSupabase]);
@@ -85,17 +87,13 @@ const App: React.FC = () => {
       const results = await analyzeWheelImage(base64);
       if (results && results.length > 0) {
         handleConfirmScores(results);
-      } else {
-        alert("A IA não conseguiu identificar os dados. Tente uma imagem mais clara ou insira manualmente.");
-        setEntryMode('manual');
       }
     } catch (error: any) {
-      console.error("Erro no Upload:", error);
-      // Se o erro for 403, é provável que a chave de API esteja errada ou sem saldo/quota
-      const errorMsg = error.message?.includes('403') 
-        ? "Erro de Permissão (403): Verifique se sua API_KEY está correta e ativa no Google AI Studio."
-        : "Erro ao analisar imagem. Verifique sua chave API no Vercel ou o console (F12).";
-      alert(errorMsg);
+      console.error("Erro no processamento:", error);
+      if (error.message?.includes("not found")) {
+        setHasApiKey(false); // Força re-seleção se a chave falhar
+      }
+      alert("Erro ao analisar imagem. Certifique-se de que a chave API está configurada corretamente.");
     } finally {
       setIsAnalyzing(false);
     }
@@ -108,16 +106,13 @@ const App: React.FC = () => {
       const completedCount = item.goals.filter(g => g.completed).length;
       const progressRatio = completedCount / totalGoals;
       const bonus = progressRatio * (10 - item.score);
-      const currentScore = parseFloat((item.score + bonus).toFixed(1));
-      return { ...item, currentScore };
+      return { ...item, currentScore: parseFloat((item.score + bonus).toFixed(1)) };
     });
   }, [baseData]);
 
   const totalXP = useMemo(() => {
     const baseXP = baseData.reduce((acc, curr) => acc + curr.score * 10, 0);
-    const goalsXP = baseData.reduce((acc, curr) => 
-      acc + (curr.goals.filter(g => g.completed).length * 150), 0
-    );
+    const goalsXP = baseData.reduce((acc, curr) => acc + (curr.goals.filter(g => g.completed).length * 150), 0);
     const evolutionXP = evolvedData.reduce((acc, curr) => {
       const diff = (curr.currentScore || 0) - curr.score;
       return acc + (diff > 0 ? diff * 100 : 0);
@@ -132,40 +127,48 @@ const App: React.FC = () => {
       const prevScore = prevScoresRef.current[item.category];
       const newScore = item.currentScore || item.score;
       if (prevScore !== undefined && Math.floor(newScore) > Math.floor(prevScore)) {
-        const diffDays = Math.floor((Date.now() - startTimeRef.current) / (1000 * 60 * 60 * 24)) + 1;
-        setLevelUpInfo({
-          area: item.category,
-          days: diffDays,
-          level: Math.floor(newScore)
-        });
+        setLevelUpInfo({ area: item.category, days: 1, level: Math.floor(newScore) });
         shouldSave = true;
       }
       if (newScore !== prevScore) shouldSave = true;
       prevScoresRef.current[item.category] = newScore;
     });
-    if (shouldSave) {
-      const timeout = setTimeout(() => saveToSupabase(baseData, totalXP), 2000);
-      return () => clearTimeout(timeout);
-    }
+    if (shouldSave) saveToSupabase(baseData, totalXP);
   }, [evolvedData, baseData, totalXP, saveToSupabase]);
 
   const updateCategoryGoals = (categoryName: string, goals: Goal[]) => {
-    setBaseData(prev => prev.map(c => 
-      c.category === categoryName ? { ...c, goals } : c
-    ));
+    setBaseData(prev => prev.map(c => c.category === categoryName ? { ...c, goals } : c));
   };
 
-  const handleReset = async () => {
-    if (window.confirm("Isso apagará sua 'run' atual permanentemente. Deseja recomeçar?")) {
-      setBaseData([]);
-      setIsStarted(false);
-      setCurrentImage(null);
-      prevScoresRef.current = {};
-      if (supabase) {
-        await supabase.from('planner_runs').delete().neq('id', '00000000-0000-0000-0000-000000000000');
-      }
-    }
-  };
+  if (!hasApiKey && !process.env.API_KEY) {
+    return (
+      <div className="min-h-screen bg-[#1a1612] flex items-center justify-center p-6 text-center">
+        <div className="max-w-md bg-[#25201b] border-4 border-[#3d352d] p-10 shadow-2xl">
+          <div className="w-20 h-20 bg-amber-600 rounded-full flex items-center justify-center mx-auto mb-8 border-4 border-[#f5e6d3] shadow-lg">
+            <Key size={40} className="text-[#1a1612]" />
+          </div>
+          <h2 className="text-3xl font-dst text-[#f5e6d3] mb-4 uppercase tracking-tighter">Conexão com IA Necessária</h2>
+          <p className="text-[#f5e6d3]/60 mb-8 text-sm leading-relaxed">
+            Para analisar sua Roda da Vida via imagem, precisamos conectar com o Google Gemini. Por favor, selecione sua chave API de um projeto com faturamento ativo.
+          </p>
+          <button 
+            onClick={handleOpenKeySelector}
+            className="w-full bg-[#f5e6d3] text-[#1a1612] py-4 font-dst text-xl uppercase tracking-widest border-4 border-[#3d352d] hover:bg-white transition-all mb-4"
+          >
+            Configurar Chave API
+          </button>
+          <a 
+            href="https://ai.google.dev/gemini-api/docs/billing" 
+            target="_blank" 
+            rel="noopener noreferrer"
+            className="flex items-center justify-center gap-2 text-[10px] text-amber-500 uppercase tracking-widest hover:underline"
+          >
+            Documentação de Faturamento <ExternalLink size={10} />
+          </a>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen pb-20 overflow-x-hidden">
@@ -198,7 +201,7 @@ const App: React.FC = () => {
           <div className="flex items-center gap-4">
             {isStarted && (
               <button 
-                onClick={handleReset}
+                onClick={() => window.confirm("Reiniciar run?") && setBaseData([])}
                 className="flex items-center gap-2 bg-[#3d352d] hover:bg-[#4d443a] px-5 py-2 rounded-[4px] border border-[#f5e6d3]/20 transition-all text-xs font-dst uppercase tracking-widest text-[#f5e6d3]"
               >
                 <RefreshCw size={14} />
@@ -215,7 +218,7 @@ const App: React.FC = () => {
             <div className="text-center">
               <h2 className="text-6xl font-dst text-[#f5e6d3] mb-6 tracking-tighter drop-shadow-lg uppercase">Mapeie sua Jornada</h2>
               <p className="text-[#f5e6d3]/60 font-dst text-lg max-w-2xl mx-auto leading-relaxed italic">
-                Escolha o método de entrada para iniciar sua jornada de evolução em 2026.
+                Sua sobrevivência em 2026 começa com um diagnóstico honesto.
               </p>
             </div>
 
@@ -242,9 +245,6 @@ const App: React.FC = () => {
                     isAnalyzing={isAnalyzing} 
                     currentImage={currentImage} 
                   />
-                  <p className="text-center text-[10px] text-[#f5e6d3]/30 uppercase tracking-[0.2em]">
-                    Nossa IA identificará as áreas e notas automaticamente
-                  </p>
                 </div>
               ) : (
                 <ManualEntry onConfirm={handleConfirmScores} />
@@ -254,18 +254,10 @@ const App: React.FC = () => {
         ) : (
           <div className="space-y-16">
             <DSTStats data={evolvedData} totalXP={totalXP} />
-            
             <div className="bg-[#f5e6d3] text-[#1a1612] p-8 md:p-12 rounded-[4px] shadow-2xl border-x-[12px] border-y-[4px] border-[#3d352d] relative">
-               <div className="absolute top-0 left-1/2 -translate-x-1/2 -translate-y-1/2 bg-[#3d352d] text-[#f5e6d3] px-6 py-2 font-dst text-sm uppercase tracking-widest rounded-full">
-                  Progress Report
-               </div>
                <RankingChart data={evolvedData} />
             </div>
-
-            <GoalTracker 
-              categories={evolvedData} 
-              onUpdateGoals={updateCategoryGoals} 
-            />
+            <GoalTracker categories={evolvedData} onUpdateGoals={updateCategoryGoals} />
           </div>
         )}
       </main>
