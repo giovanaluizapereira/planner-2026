@@ -86,12 +86,16 @@ const App: React.FC = () => {
       if (results && results.length > 0) {
         handleConfirmScores(results);
       } else {
-        alert("Não conseguimos ler a imagem. Tente inserir os dados manualmente.");
+        alert("A IA não conseguiu identificar os dados. Tente uma imagem mais clara ou insira manualmente.");
         setEntryMode('manual');
       }
-    } catch (error) {
-      console.error(error);
-      alert("Erro ao analisar imagem. Verifique sua chave API.");
+    } catch (error: any) {
+      console.error("Erro no Upload:", error);
+      // Se o erro for 403, é provável que a chave de API esteja errada ou sem saldo/quota
+      const errorMsg = error.message?.includes('403') 
+        ? "Erro de Permissão (403): Verifique se sua API_KEY está correta e ativa no Google AI Studio."
+        : "Erro ao analisar imagem. Verifique sua chave API no Vercel ou o console (F12).";
+      alert(errorMsg);
     } finally {
       setIsAnalyzing(false);
     }
