@@ -1,56 +1,66 @@
-
 import { GoogleGenAI, Type } from "@google/genai";
 import { WheelData } from "../types";
 
 export const analyzeWheelImage = async (base64Image: string): Promise<WheelData[]> => {
-  // A API_KEY será injetada automaticamente pelo Vercel via process.env.API_KEY
-  const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
+  // A API_KEY deve estar configurada no Vercel (Settings > Environment Variables)
+  const apiKey = process.env.API_KEY;
   
+  if (!apiKey) {
+    throw new Error("API_KEY não encontrada no ambiente.");
+  }
+
+  const ai = new GoogleGenAI({ apiKey });
+  
+  // Extrair o MIME type e os dados puros do base64
+  const mimeTypeMatch = base64Image.match(/data:(.*?);/);
+  const mimeType = mimeTypeMatch ? mimeTypeMatch[1] : 'image/png';
   const base64Data = base64Image.includes(',') ? base64Image.split(',')[1] : base64Image;
 
-  const response = await ai.models.generateContent({
-    model: 'gemini-3-flash-preview',
-    contents: [
-      {
-        parts: [
-          {
-            text: `Você é um especialista em coaching e análise de dados. 
-            Analise a imagem da Roda da Vida enviada:
-            1. Identifique cada categoria (ex: Saúde, Finanças, Carreira).
-            2. Estime a nota de 0 a 10 com base no preenchimento visual de cada fatia.
-            3. Se o texto estiver difícil de ler, use termos padrão de Roda da Vida em português.
-            
-            Retorne um array JSON estritamente com os campos "category" e "score".`
-          },
-          {
-            inlineData: {
-              mimeType: 'image/png',
-              data: base64Data
+  try {
+    const response = await ai.models.generateContent({
+      model: 'gemini-2.5-flash-preview', // Modelo otimizado para multimodalidade
+      contents: [
+        {
+          parts: [
+            {
+              text: `Analise esta imagem da Roda da Vida. 
+              Extraia as categorias e as notas (de 0 a 10). 
+              Se as notas não estiverem explícitas, estime pelo preenchimento visual.
+              Retorne APENAS um array JSON puro, sem formatação markdown, seguindo este esquema:
+              [{"category": "Nome", "score": 7.5}]`
+            },
+            {
+              inlineData: {
+                mimeType: mimeType,
+                data: base64Data
+              }
             }
+          ]
+        }
+      ],
+      config: {
+        responseMimeType: "application/json",
+        responseSchema: {
+          type: Type.ARRAY,
+          items: {
+            type: Type.OBJECT,
+            properties: {
+              category: { type: Type.STRING },
+              score: { type: Type.NUMBER }
+            },
+            required: ["category", "score"]
           }
-        ]
-      }
-    ],
-    config: {
-      responseMimeType: "application/json",
-      responseSchema: {
-        type: Type.ARRAY,
-        items: {
-          type: Type.OBJECT,
-          properties: {
-            category: { type: Type.STRING },
-            score: { type: Type.NUMBER }
-          },
-          required: ["category", "score"]
         }
       }
-    }
-  });
+    });
 
-  try {
-    return JSON.parse(response.text || "[]");
+    const textResponse = response.text || "";
+    // Limpeza extra caso a IA ignore o responseMimeType e envie markdown
+    const jsonString = textResponse.replace(/```json|```/g, "").trim();
+    
+    return JSON.parse(jsonString);
   } catch (e) {
-    console.error("Erro no parsing da IA:", e);
-    return [];
+    console.error("Erro detalhado na análise da IA:", e);
+    throw e;
   }
 };
