@@ -1,6 +1,6 @@
 
 import React, { useState } from 'react';
-import { HelpCircle, Check, Pencil } from 'lucide-react';
+import { HelpCircle, Check, Pencil, ChevronDown, ChevronUp } from 'lucide-react';
 import { CATEGORY_QUESTIONS, CATEGORY_METADATA } from '../constants';
 
 interface ManualEntryProps {
@@ -25,12 +25,10 @@ const ManualEntry: React.FC<ManualEntryProps> = ({ onConfirm }) => {
     const currentAnswers = [...(quizAnswers[category] || [])];
     currentAnswers[questionIdx] = value;
     
-    const answeredCount = currentAnswers.filter(v => v !== undefined).length;
-    if (answeredCount > 0) {
-      const sum = currentAnswers.reduce((acc, curr) => acc + (curr || 0), 0);
-      const avg = parseFloat((sum / answeredCount).toFixed(1));
-      setScores(prev => ({ ...prev, [category]: avg }));
-    }
+    const filledAnswers = currentAnswers.filter(v => v !== undefined);
+    const sum = filledAnswers.reduce((acc, curr) => acc + (curr || 0), 0);
+    const avg = parseFloat((sum / filledAnswers.length).toFixed(1));
+    setScores(prev => ({ ...prev, [category]: avg }));
     
     setQuizAnswers(prev => ({ ...prev, [category]: currentAnswers }));
   };
@@ -44,93 +42,81 @@ const ManualEntry: React.FC<ManualEntryProps> = ({ onConfirm }) => {
   };
 
   return (
-    <div className="space-y-12 max-w-7xl mx-auto">
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+    <div className="space-y-12 max-w-6xl mx-auto">
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
         {categories.map((cat) => {
           const meta = CATEGORY_METADATA[cat];
+          const isExpanded = expandedCategory === cat;
+          const questionsFilled = quizAnswers[cat].filter(v => v !== undefined).length;
+          
           return (
-            <div key={cat} className="bg-[#1a1612] border-4 border-[#3d352d] shadow-xl flex flex-col transition-all duration-300">
-              <div className="p-6 flex flex-col gap-4">
+            <div 
+              key={cat} 
+              className={`bg-[#1a1612] border-4 border-[#3d352d] shadow-xl flex flex-col transition-all duration-300 ${isExpanded ? 'lg:col-span-2 scale-[1.02] z-10' : 'hover:border-amber-500/50'}`}
+            >
+              <div 
+                className="p-6 cursor-pointer flex flex-col gap-4"
+                onClick={() => setExpandedCategory(isExpanded ? null : cat)}
+              >
                 {/* Cabeçalho do Card */}
                 <div className="flex justify-between items-start">
-                  <div>
+                  <div className="flex-1">
                     <h3 className="font-dst text-xl text-[#f5e6d3] uppercase tracking-tighter leading-none">{cat}</h3>
-                    <p className="text-[10px] text-[#f5e6d3]/40 mt-1 uppercase tracking-wider">{meta?.description}</p>
+                    <p className="text-[10px] text-[#f5e6d3]/40 mt-1 uppercase tracking-wider line-clamp-1">{meta?.description}</p>
                   </div>
-                  <div className="flex items-center gap-2">
-                    <button 
-                      onClick={() => setExpandedCategory(expandedCategory === cat ? null : cat)}
-                      className="p-1.5 text-[#f5e6d3]/30 hover:text-amber-500 transition-colors"
-                    >
-                      <Pencil size={16} />
-                    </button>
-                    <div 
-                      className="w-6 h-6 rounded-sm border border-[#3d352d]"
-                      style={{ backgroundColor: meta?.color }}
-                    />
+                  <div 
+                    className="w-8 h-8 rounded-sm border-2 border-[#3d352d] flex items-center justify-center text-[#1a1612] shadow-inner"
+                    style={{ backgroundColor: meta?.color }}
+                  >
+                    {isExpanded ? <ChevronUp size={16} /> : <ChevronDown size={16} />}
                   </div>
                 </div>
 
                 {/* Score Display */}
-                <div className="flex justify-between items-end mt-2">
-                  <span className="text-[10px] font-dst text-[#f5e6d3]/60 uppercase tracking-widest">Avaliação:</span>
+                <div className="flex justify-between items-end">
+                  <span className="text-[10px] font-dst text-[#f5e6d3]/60 uppercase tracking-widest">Score Inicial:</span>
                   <div className="flex items-baseline gap-0.5">
-                    <span className="font-dst text-2xl text-[#f5e6d3]">{scores[cat]}</span>
+                    <span className="font-dst text-3xl text-amber-500 drop-shadow-md">{scores[cat]}</span>
                     <span className="font-dst text-xs text-[#f5e6d3]/40">/10</span>
                   </div>
                 </div>
 
-                {/* Slider */}
-                <div className="space-y-1">
-                  <div className="relative h-6 flex items-center">
-                    <div className="absolute inset-0 h-2 my-auto bg-[#3d352d] rounded-full overflow-hidden">
-                       <div 
-                         className="h-full transition-all duration-300" 
-                         style={{ 
-                           width: `${(scores[cat] / 10) * 100}%`,
-                           backgroundColor: meta?.color,
-                           opacity: 0.8
-                         }} 
-                       />
-                    </div>
-                    <input 
-                      type="range" 
-                      min="0" 
-                      max="10" 
-                      step="0.5"
-                      value={scores[cat]} 
-                      onChange={(e) => handleScoreChange(cat, parseFloat(e.target.value))}
-                      className="absolute inset-0 w-full h-full bg-transparent appearance-none cursor-pointer z-10 [&::-webkit-slider-thumb]:appearance-none [&::-webkit-slider-thumb]:w-4 [&::-webkit-slider-thumb]:h-4 [&::-webkit-slider-thumb]:rounded-full [&::-webkit-slider-thumb]:bg-white [&::-webkit-slider-thumb]:border-2 [&::-webkit-slider-thumb]:border-[#3d352d]"
+                {/* Mini Progresso das Perguntas */}
+                <div className="flex gap-1 h-1">
+                  {[0, 1, 2, 3, 4].map(i => (
+                    <div 
+                      key={i} 
+                      className={`flex-1 h-full rounded-full transition-colors ${quizAnswers[cat][i] !== undefined ? 'bg-amber-500' : 'bg-[#3d352d]'}`} 
                     />
-                  </div>
-                  <div className="flex justify-between text-[8px] font-dst text-[#f5e6d3]/30 uppercase tracking-tighter">
-                    <span>Muito Baixo</span>
-                    <span className="text-amber-500/50">Neutro</span>
-                    <span>Excelente</span>
-                  </div>
+                  ))}
                 </div>
               </div>
 
-              {/* Quiz Opcional Expandido */}
-              {expandedCategory === cat && (
-                <div className="px-6 pb-6 pt-2 bg-[#3d352d]/20 border-t-2 border-[#3d352d]/50 animate-in slide-in-from-top-2">
-                  <div className="flex items-center gap-2 mb-4">
+              {/* Quiz Detalhado */}
+              {isExpanded && (
+                <div className="px-6 pb-6 pt-2 bg-[#25201b] border-t-2 border-[#3d352d] animate-in slide-in-from-top-2">
+                  <div className="flex items-center gap-2 mb-6 pt-4 border-t border-[#3d352d]/30">
                     <HelpCircle size={14} className="text-amber-500" />
-                    <p className="text-[10px] text-amber-500/60 uppercase tracking-widest italic">Pergaminho de Precisão</p>
+                    <p className="text-[10px] text-amber-500 uppercase tracking-widest italic font-bold">5 Perguntas de Precisão</p>
+                    <span className="ml-auto text-[10px] text-[#f5e6d3]/30 uppercase font-dst">{questionsFilled}/5 Respondidas</span>
                   </div>
-                  <div className="space-y-4">
+                  
+                  <div className="space-y-6">
                     {CATEGORY_QUESTIONS[cat].map((q, idx) => (
-                      <div key={idx} className="space-y-2">
-                        <p className="text-[10px] font-dst text-[#f5e6d3]/70 leading-tight">{q}</p>
-                        <div className="flex justify-between gap-0.5">
+                      <div key={idx} className="space-y-3">
+                        <p className="text-[11px] font-dst text-[#f5e6d3] leading-relaxed opacity-80">{idx + 1}. {q}</p>
+                        <div className="flex justify-between gap-1">
                           {[1, 2, 3, 4, 5, 6, 7, 8, 9, 10].map((num) => (
                             <button
                               key={num}
-                              onClick={() => handleQuizAnswer(cat, idx, num)}
-                              className={`flex-1 py-1 text-[9px] font-dst border border-[#3d352d] transition-all ${
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                handleQuizAnswer(cat, idx, num);
+                              }}
+                              className={`flex-1 py-2 text-[10px] font-dst border border-[#3d352d] transition-all rounded-sm ${
                                 quizAnswers[cat][idx] === num 
-                                  ? 'bg-amber-600 text-[#1a1612] font-bold' 
-                                  : 'bg-[#1a1612] text-[#f5e6d3]/20 hover:bg-[#3d352d]'
+                                  ? 'bg-amber-600 text-[#1a1612] font-black border-amber-400' 
+                                  : 'bg-[#1a1612] text-[#f5e6d3]/30 hover:bg-[#3d352d] hover:text-[#f5e6d3]'
                               }`}
                             >
                               {num}
@@ -140,6 +126,15 @@ const ManualEntry: React.FC<ManualEntryProps> = ({ onConfirm }) => {
                       </div>
                     ))}
                   </div>
+
+                  <div className="mt-8 pt-4 border-t border-[#3d352d]/30">
+                    <button 
+                      onClick={() => setExpandedCategory(null)}
+                      className="w-full py-2 bg-[#3d352d] text-[#f5e6d3] font-dst text-[10px] uppercase tracking-widest hover:bg-[#4d443a] transition-colors"
+                    >
+                      Confirmar Notas desta Área
+                    </button>
+                  </div>
                 </div>
               )}
             </div>
@@ -147,13 +142,20 @@ const ManualEntry: React.FC<ManualEntryProps> = ({ onConfirm }) => {
         })}
       </div>
 
-      <div className="flex justify-center pt-8">
+      <div className="flex flex-col items-center gap-6 pt-12 pb-24">
+        <div className="max-w-md w-full bg-amber-600/10 border-2 border-dashed border-amber-600/30 p-4 text-center">
+          <p className="text-[10px] text-amber-500 uppercase tracking-widest font-dst italic leading-relaxed">
+            "Para uma precisão letal, expanda cada área e responda as 5 questões. 
+            O score será a média das suas respostas."
+          </p>
+        </div>
+        
         <button 
           onClick={handleSubmit}
-          className="w-full max-w-md bg-[#f5e6d3] hover:bg-white text-[#1a1612] py-6 font-dst text-2xl uppercase tracking-[0.2em] border-4 border-[#3d352d] shadow-2xl transition-all hover:scale-[1.02] active:scale-95 flex items-center justify-center gap-4 group"
+          className="w-full max-w-lg bg-[#f5e6d3] hover:bg-white text-[#1a1612] py-8 font-dst text-3xl uppercase tracking-[0.2em] border-4 border-[#3d352d] shadow-2xl transition-all hover:scale-[1.05] active:scale-95 flex items-center justify-center gap-4 group"
         >
-          <Check size={32} className="group-hover:rotate-12 transition-transform" />
-          Iniciar Sobrevivência
+          <Check size={40} className="group-hover:rotate-12 transition-transform" />
+          Iniciar Jornada 2026
         </button>
       </div>
     </div>
