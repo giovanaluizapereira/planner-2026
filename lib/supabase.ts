@@ -1,21 +1,7 @@
-
 import { createClient } from '@supabase/supabase-js';
 
-// Tenta detectar as chaves em diferentes contextos (Vercel, Vite, Global)
-const getEnv = (name: string) => {
-  if (typeof process !== 'undefined' && process.env && process.env[name]) return process.env[name];
-  // @ts-ignore
-  if (typeof import.meta !== 'undefined' && import.meta.env && import.meta.env[`VITE_${name}`]) return import.meta.env[`VITE_${name}`];
-  return '';
-};
+// As chaves foram inseridas diretamente no código para garantir que o aplicativo funcione independente das variáveis de ambiente da Vercel.
+const supabaseUrl = 'https://lksyuapxgzyczyfijode.supabase.co';
+const supabaseAnonKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imxrc3l1YXB4Z3p5Y3p5Zmlqb2RlIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjM4NDk2MzMsImV4cCI6MjA4NDQyNTYyNn0.BFXrm7jKkOpCriRzaBpzlc_YJjBvQMHO0oAbvtI01YY';
 
-const supabaseUrl = getEnv('SUPABASE_URL');
-const supabaseAnonKey = getEnv('SUPABASE_ANON_KEY');
-
-export const supabase = (supabaseUrl && supabaseAnonKey) 
-  ? createClient(supabaseUrl, supabaseAnonKey)
-  : null;
-
-if (!supabase) {
-  console.warn("SUPABASE WARNING: Chaves não detectadas. Certifique-se de fazer o REDEPLOY na Vercel.");
-}
+export const supabase = createClient(supabaseUrl, supabaseAnonKey);
