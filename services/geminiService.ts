@@ -1,35 +1,31 @@
-import { GoogleGenAI, Type } from "@google/genai";
-import { WheelData } from "../types";
 
-export const analyzeWheelImage = async (base64Image: string): Promise<WheelData[]> => {
-  // Inicializamos dentro da função para garantir que pegamos a chave do process.env.API_KEY 
-  // mesmo que ela seja injetada via window.aistudio.openSelectKey() após o carregamento inicial.
-  const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
+import { GoogleGenAI, Type } from "@google/genai";
+
+export const analyzeWheelImage = async (base64Image: string): Promise<any[]> => {
+  const apiKey = process.env.API_KEY;
+  if (!apiKey) throw new Error("API_KEY não configurada no ambiente.");
   
-  const mimeTypeMatch = base64Image.match(/data:(.*?);/);
-  const mimeType = mimeTypeMatch ? mimeTypeMatch[1] : 'image/png';
+  const ai = new GoogleGenAI({ apiKey });
   const base64Data = base64Image.includes(',') ? base64Image.split(',')[1] : base64Image;
 
   try {
-    // Usamos o modelo Pro para análise de gráficos e texto em imagens
     const response = await ai.models.generateContent({
-      model: 'gemini-3-pro-preview',
-      contents: {
-        parts: [
-          {
-            text: `Analise detalhadamente esta Roda da Vida. 
-            Identifique as categorias escritas e as notas de 0 a 10 atribuídas (baseado no preenchimento visual se necessário). 
-            Retorne APENAS um array JSON puro:
-            [{"category": "Nome da Área", "score": 7.5}]`
-          },
-          {
-            inlineData: {
-              mimeType: mimeType,
-              data: base64Data
+      model: 'gemini-2.5-flash-image',
+      contents: [
+        {
+          parts: [
+            {
+              text: "Analise esta imagem da Roda da Vida. Identifique cada categoria e a pontuação preenchida (de 0 a 10). Retorne um array de objetos JSON com 'category' e 'score'."
+            },
+            {
+              inlineData: {
+                mimeType: 'image/png',
+                data: base64Data
+              }
             }
-          }
-        ]
-      },
+          ]
+        }
+      ],
       config: {
         responseMimeType: "application/json",
         responseSchema: {
@@ -46,15 +42,10 @@ export const analyzeWheelImage = async (base64Image: string): Promise<WheelData[
       }
     });
 
-    const textResponse = response.text;
-    if (!textResponse) throw new Error("Resposta vazia da IA.");
-
-    const jsonString = textResponse.replace(/```json|```/g, "").trim();
-    return JSON.parse(jsonString);
+    if (!response.text) throw new Error("IA não retornou dados válidos.");
+    return JSON.parse(response.text);
   } catch (e: any) {
-    console.error("Erro na API Gemini:", e);
-    // Se o erro indicar que a entidade não foi encontrada ou erro de auth, 
-    // pode ser que a chave selecionada não tenha permissão.
-    throw e;
+    console.error("Erro na análise da IA:", e);
+    throw new Error("Falha ao analisar imagem. Verifique se o formato é válido.");
   }
 };
