@@ -25,27 +25,28 @@ const App: React.FC = () => {
   const isInitialLoad = useRef(true);
   const saveTimeoutRef = useRef<NodeJS.Timeout | null>(null);
 
-  // Saneador de dados para garantir compatibilidade com versões anteriores
+  // Saneador de dados para garantir compatibilidade com versões anteriores e novos campos
   const sanitizeData = (data: any[]): WheelData[] => {
     if (!Array.isArray(data)) return [];
     return data.map(cat => ({
       ...cat,
       goals: (cat.goals || []).map((goal: any) => ({
         id: goal.id || Math.random().toString(36).substr(2, 9),
-        intention: goal.intention || goal.text || '', // Fallback para campo 'text' antigo
+        intention: goal.intention || goal.text || '',
+        why: goal.why || '',
         smartGoal: goal.smartGoal || '',
+        withWhom: goal.withWhom || '',
         successIndicator: goal.successIndicator || '',
         dueDate: goal.dueDate || '',
         horizon: goal.horizon || 'Médio',
-        practiceEvidences: goal.practiceEvidences || [],
-        socialEvidences: goal.socialEvidences || [],
         conceptualEvidences: goal.conceptualEvidences || [],
+        socialEvidences: goal.socialEvidences || [],
+        practiceEvidences: goal.practiceEvidences || [],
         completed: !!goal.completed
       }))
     }));
   };
 
-  // Gerenciamento de Sessão
   useEffect(() => {
     if (!supabase) {
       setIsLoadingSession(false);
@@ -61,7 +62,6 @@ const App: React.FC = () => {
     return () => subscription.unsubscribe();
   }, []);
 
-  // Carregar dados iniciais
   const loadData = useCallback(async () => {
     if (!supabase || !session?.user) return;
     const { data, error } = await supabase
@@ -85,7 +85,6 @@ const App: React.FC = () => {
 
   useEffect(() => { loadData(); }, [loadData]);
 
-  // Função de salvamento
   const saveToSupabase = useCallback(async (currentData: WheelData[], xp: number) => {
     if (!supabase || !session?.user || currentData.length === 0) return;
     setIsSaving(true);
