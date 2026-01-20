@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { supabase } from '../lib/supabase';
 import { Skull, Mail, Lock, Loader2, LogIn, AlertTriangle, RefreshCw } from 'lucide-react';
@@ -13,14 +12,6 @@ export const Auth: React.FC = () => {
   const handleAuth = async (e: React.FormEvent) => {
     e.preventDefault();
     
-    if (!supabase) {
-      setMessage({ 
-        type: 'error', 
-        text: 'CONFIGURAÇÃO INCOMPLETA: As variáveis SUPABASE_URL e SUPABASE_ANON_KEY não foram encontradas pelo navegador. Se você as adicionou agora na Vercel, você PRECISA ir em "Deployments" e clicar em "Redeploy" para elas funcionarem.' 
-      });
-      return;
-    }
-
     setLoading(true);
     setMessage(null);
 
