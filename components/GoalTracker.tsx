@@ -28,6 +28,7 @@ const CustomDatePicker: React.FC<{
   const containerRef = useRef<HTMLDivElement>(null);
 
   const months = ['janeiro', 'fevereiro', 'março', 'abril', 'maio', 'junho', 'julho', 'agosto', 'setembro', 'outubro', 'novembro', 'dezembro'];
+  const weekDays = ['D', 'S', 'T', 'Q', 'Q', 'S', 'S'];
 
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
@@ -50,6 +51,7 @@ const CustomDatePicker: React.FC<{
     : '';
 
   const daysInMonth = isNaN(viewDate.getTime()) ? 30 : new Date(viewDate.getFullYear(), viewDate.getMonth() + 1, 0).getDate();
+  const firstDayOfMonth = new Date(viewDate.getFullYear(), viewDate.getMonth(), 1).getDay();
 
   return (
     <div className="relative w-full" ref={containerRef}>
@@ -58,22 +60,48 @@ const CustomDatePicker: React.FC<{
         <CalendarIcon size={16} className="text-[#3d352d]/40" />
       </div>
       {isOpen && (
-        <div className="absolute bottom-full mb-2 left-0 bg-[#f5e6d3] rounded-[4px] shadow-2xl border-4 border-[#3d352d] z-[100] p-6 w-80">
-          <div className="flex justify-between items-center mb-6">
-            <h5 className="font-dst font-bold text-[#1a1612] capitalize text-lg">
+        <div className="absolute bottom-full mb-2 left-0 bg-[#f5e6d3] rounded-[4px] shadow-2xl border-4 border-[#3d352d] z-[100] p-4 w-72">
+          {/* Header */}
+          <div className="flex justify-between items-center mb-4">
+            <h5 className="font-dst font-bold text-[#1a1612] capitalize text-base">
               {!isNaN(viewDate.getTime()) ? months[viewDate.getMonth()] : 'Mês'} {!isNaN(viewDate.getTime()) ? viewDate.getFullYear() : '2026'}
             </h5>
-            <div className="flex gap-2">
-              <button onClick={() => setViewDate(new Date(viewDate.getFullYear(), viewDate.getMonth() - 1))} className="p-2 hover:bg-[#3d352d]/10 rounded-full text-[#3d352d]"><ChevronDown className="rotate-90" size={20} /></button>
-              <button onClick={() => setViewDate(new Date(viewDate.getFullYear(), viewDate.getMonth() + 1))} className="p-2 hover:bg-[#3d352d]/10 rounded-full text-[#3d352d]"><ChevronUp className="rotate-90" size={20} /></button>
+            <div className="flex gap-1">
+              <button onClick={() => setViewDate(new Date(viewDate.getFullYear(), viewDate.getMonth() - 1))} className="p-1 hover:bg-[#3d352d]/10 rounded text-[#3d352d]"><ChevronDown className="rotate-90" size={18} /></button>
+              <button onClick={() => setViewDate(new Date(viewDate.getFullYear(), viewDate.getMonth() + 1))} className="p-1 hover:bg-[#3d352d]/10 rounded text-[#3d352d]"><ChevronUp className="rotate-90" size={18} /></button>
             </div>
           </div>
-          <div className="grid grid-cols-7 gap-y-1">
-            {[...Array(daysInMonth)].map((_, i) => (
-              <button key={i} onClick={() => handleDateSelect(i + 1)} className="h-10 w-10 font-dst rounded-full text-sm flex items-center justify-center hover:bg-[#3d352d] hover:text-[#f5e6d3]">
-                {i + 1}
-              </button>
+
+          {/* Weekday labels */}
+          <div className="grid grid-cols-7 mb-2">
+            {weekDays.map(d => (
+              <div key={d} className="text-center text-[10px] font-dst font-black text-[#3d352d]/40 uppercase">{d}</div>
             ))}
+          </div>
+
+          {/* Days grid */}
+          <div className="grid grid-cols-7 gap-1">
+            {/* Empty slots for previous month days */}
+            {[...Array(firstDayOfMonth)].map((_, i) => <div key={`empty-${i}`} />)}
+            
+            {[...Array(daysInMonth)].map((_, i) => {
+              const dayNum = i + 1;
+              const isSelected = value === `${viewDate.getFullYear()}-${String(viewDate.getMonth() + 1).padStart(2, '0')}-${String(dayNum).padStart(2, '0')}`;
+              
+              return (
+                <button 
+                  key={dayNum} 
+                  onClick={() => handleDateSelect(dayNum)} 
+                  className={`h-8 w-8 font-dst rounded-sm text-xs flex items-center justify-center transition-colors border border-transparent
+                    ${isSelected 
+                      ? 'bg-amber-600 text-[#1a1612] font-black border-[#3d352d]' 
+                      : 'text-[#1a1612] hover:bg-[#3d352d] hover:text-[#f5e6d3] font-bold'
+                    }`}
+                >
+                  {dayNum}
+                </button>
+              );
+            })}
           </div>
         </div>
       )}
