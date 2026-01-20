@@ -1,8 +1,14 @@
 
 import React, { useState, useRef, useEffect } from 'react';
-import { WheelData, Goal } from '../types';
-import { CATEGORY_ICONS, BAR_COLORS } from '../constants';
-import { Plus, Trash2, Target, ChevronDown, ChevronUp, Calendar as CalendarIcon, CheckCircle2, Circle, Ruler, ChevronLeft, ChevronRight, Skull, ArrowUpRight } from 'lucide-react';
+import { WheelData, Goal, Evidence } from '../types';
+import { CATEGORY_ICONS } from '../constants';
+import { 
+  Plus, Trash2, Target, ChevronDown, ChevronUp, 
+  Calendar as CalendarIcon, CheckCircle2, Circle, 
+  Skull, ArrowUpRight, BookOpen, Users, Hammer,
+  Info, Sparkles, MessageSquare, GraduationCap,
+  Clock, CheckCircle, HelpCircle
+} from 'lucide-react';
 
 interface GoalTrackerProps {
   categories: WheelData[];
@@ -28,38 +34,12 @@ const CustomDatePicker: React.FC<{
     return () => document.removeEventListener('mousedown', handleClickOutside);
   }, []);
 
-  const getDaysInMonth = (year: number, month: number) => new Date(year, month + 1, 0).getDate();
-  const getFirstDayOfMonth = (year: number, month: number) => new Date(year, month, 1).getDay();
-
-  const handlePrevMonth = () => setViewDate(new Date(viewDate.getFullYear(), viewDate.getMonth() - 1));
-  const handleNextMonth = () => setViewDate(new Date(viewDate.getFullYear(), viewDate.getMonth() + 1));
-
   const handleDateSelect = (day: number) => {
     const selected = new Date(viewDate.getFullYear(), viewDate.getMonth(), day);
     const offset = selected.getTimezoneOffset();
     const adjustedDate = new Date(selected.getTime() - (offset * 60 * 1000));
     onChange(adjustedDate.toISOString().split('T')[0]);
     setIsOpen(false);
-  };
-
-  const renderDays = () => {
-    const year = viewDate.getFullYear();
-    const month = viewDate.getMonth();
-    const daysInMonth = getDaysInMonth(year, month);
-    const firstDay = getFirstDayOfMonth(year, month);
-    const days = [];
-
-    for (let i = 0; i < firstDay; i++) days.push(<div key={`empty-${i}`} className="h-10 w-10" />);
-    for (let d = 1; d <= daysInMonth; d++) {
-      const selectedDate = value ? new Date(value + 'T12:00:00') : null;
-      const isSelected = selectedDate && selectedDate.getDate() === d && selectedDate.getMonth() === month && selectedDate.getFullYear() === year;
-      days.push(
-        <button key={d} onClick={() => handleDateSelect(d)} className={`h-10 w-10 font-dst rounded-full text-sm flex items-center justify-center transition-all ${isSelected ? 'bg-[#3d352d] text-[#f5e6d3]' : 'hover:bg-slate-100 text-[#1a1612]'}`}>
-          {d}
-        </button>
-      );
-    }
-    return days;
   };
 
   const formattedValue = value ? new Date(value + 'T12:00:00').toLocaleDateString('pt-BR') : '';
@@ -71,16 +51,21 @@ const CustomDatePicker: React.FC<{
         <CalendarIcon size={16} className="text-[#3d352d]/40" />
       </div>
       {isOpen && (
-        <div className="absolute top-full left-0 mt-2 bg-[#f5e6d3] rounded-[4px] shadow-2xl border-4 border-[#3d352d] z-[100] p-6 w-80">
+        <div className="absolute bottom-full mb-2 left-0 bg-[#f5e6d3] rounded-[4px] shadow-2xl border-4 border-[#3d352d] z-[100] p-6 w-80">
           <div className="flex justify-between items-center mb-6">
             <h5 className="font-dst font-bold text-[#1a1612] capitalize text-lg">{months[viewDate.getMonth()]} {viewDate.getFullYear()}</h5>
             <div className="flex gap-2">
-              <button onClick={handlePrevMonth} className="p-2 hover:bg-[#3d352d]/10 rounded-full text-[#3d352d]"><ChevronLeft size={20} /></button>
-              <button onClick={handleNextMonth} className="p-2 hover:bg-[#3d352d]/10 rounded-full text-[#3d352d]"><ChevronRight size={20} /></button>
+              <button onClick={() => setViewDate(new Date(viewDate.getFullYear(), viewDate.getMonth() - 1))} className="p-2 hover:bg-[#3d352d]/10 rounded-full text-[#3d352d]"><ChevronDown className="rotate-90" size={20} /></button>
+              <button onClick={() => setViewDate(new Date(viewDate.getFullYear(), viewDate.getMonth() + 1))} className="p-2 hover:bg-[#3d352d]/10 rounded-full text-[#3d352d]"><ChevronUp className="rotate-90" size={20} /></button>
             </div>
           </div>
-          <div className="grid grid-cols-7 mb-2 text-center text-[10px] font-dst font-black opacity-40">{daysShort.map(d => <div key={d}>{d}</div>)}</div>
-          <div className="grid grid-cols-7 gap-y-1">{renderDays()}</div>
+          <div className="grid grid-cols-7 gap-y-1">
+            {[...Array(new Date(viewDate.getFullYear(), viewDate.getMonth() + 1, 0).getDate())].map((_, i) => (
+              <button key={i} onClick={() => handleDateSelect(i + 1)} className="h-10 w-10 font-dst rounded-full text-sm flex items-center justify-center hover:bg-[#3d352d] hover:text-[#f5e6d3]">
+                {i + 1}
+              </button>
+            ))}
+          </div>
         </div>
       )}
     </div>
@@ -90,20 +75,51 @@ const CustomDatePicker: React.FC<{
 const GoalTracker: React.FC<GoalTrackerProps> = ({ categories, onUpdateGoals }) => {
   const [expanded, setExpanded] = useState<string | null>(null);
 
-  const addGoal = (category: string) => {
+  const addStrategy = (category: string) => {
     const cat = categories.find(c => c.category === category);
     if (!cat) return;
-    const newGoal: Goal = { id: Math.random().toString(36).substr(2, 9), description: '', measurable: '', dueDate: '', completed: false };
-    onUpdateGoals(category, [...cat.goals, newGoal]);
+    const newStrategy: Goal = { 
+      id: Math.random().toString(36).substr(2, 9), 
+      intention: '', 
+      smartGoal: '', 
+      successIndicator: '', 
+      dueDate: '', 
+      horizon: 'Médio',
+      practiceEvidences: [],
+      socialEvidences: [],
+      conceptualEvidences: [],
+      completed: false 
+    };
+    onUpdateGoals(category, [...cat.goals, newStrategy]);
   };
 
-  const updateGoal = (category: string, goalId: string, updates: Partial<Goal>) => {
+  const updateStrategy = (category: string, goalId: string, updates: Partial<Goal>) => {
     const cat = categories.find(c => c.category === category);
     if (!cat) return;
     onUpdateGoals(category, cat.goals.map(g => g.id === goalId ? { ...g, ...updates } : g));
   };
 
-  const removeGoal = (category: string, goalId: string) => {
+  const addEvidence = (category: string, goalId: string, type: 'practice' | 'social' | 'conceptual') => {
+    const cat = categories.find(c => c.category === category);
+    const goal = cat?.goals.find(g => g.id === goalId);
+    if (!goal) return;
+
+    const newEvidence: Evidence = { id: Math.random().toString(36).substr(2, 5), text: '', completed: false };
+    const field = `${type}Evidences` as keyof Goal;
+    updateStrategy(category, goalId, { [field]: [...(goal[field] as Evidence[]), newEvidence] });
+  };
+
+  const updateEvidence = (category: string, goalId: string, type: 'practice' | 'social' | 'conceptual', evidenceId: string, updates: Partial<Evidence>) => {
+    const cat = categories.find(c => c.category === category);
+    const goal = cat?.goals.find(g => g.id === goalId);
+    if (!goal) return;
+
+    const field = `${type}Evidences` as keyof Goal;
+    const newList = (goal[field] as Evidence[]).map(e => e.id === evidenceId ? { ...e, ...updates } : e);
+    updateStrategy(category, goalId, { [field]: newList });
+  };
+
+  const removeStrategy = (category: string, goalId: string) => {
     const cat = categories.find(c => c.category === category);
     if (!cat) return;
     onUpdateGoals(category, cat.goals.filter(g => g.id !== goalId));
@@ -111,83 +127,223 @@ const GoalTracker: React.FC<GoalTrackerProps> = ({ categories, onUpdateGoals }) 
 
   return (
     <div className="max-w-5xl mx-auto pb-48">
-      <div className="mb-12 px-4">
-        <h3 className="text-4xl font-dst text-[#f5e6d3] tracking-tighter uppercase italic">Recipe for Survival</h3>
-        <p className="text-[#f5e6d3]/60 font-dst text-sm mt-2 tracking-widest uppercase">Defina estratégias para alcançar o próximo nível</p>
+      <div className="mb-12 px-4 flex flex-col md:flex-row md:items-end justify-between gap-6">
+        <div>
+          <h3 className="text-4xl font-dst text-[#f5e6d3] tracking-tighter uppercase italic">Blueprint de Sobrevivência</h3>
+          <p className="text-[#f5e6d3]/60 font-dst text-sm mt-2 tracking-widest uppercase flex items-center gap-2">
+            <Sparkles size={16} className="text-amber-500" /> Do Intencional ao Acionável
+          </p>
+        </div>
+        <div className="bg-[#1a1612] border-2 border-[#3d352d] p-4 flex gap-6">
+           <div className="flex items-center gap-2">
+              <div className="w-3 h-3 bg-emerald-500 rounded-full" />
+              <span className="text-[9px] font-dst text-[#f5e6d3]/50 uppercase tracking-widest">Prática 70%</span>
+           </div>
+           <div className="flex items-center gap-2">
+              <div className="w-3 h-3 bg-blue-500 rounded-full" />
+              <span className="text-[9px] font-dst text-[#f5e6d3]/50 uppercase tracking-widest">Social 20%</span>
+           </div>
+           <div className="flex items-center gap-2">
+              <div className="w-3 h-3 bg-amber-500 rounded-full" />
+              <span className="text-[9px] font-dst text-[#f5e6d3]/50 uppercase tracking-widest">Estudo 10%</span>
+           </div>
+        </div>
       </div>
 
       <div className="flex flex-col gap-8">
-        {categories.map((cat, idx) => {
+        {categories.map((cat) => {
           const isExpanded = expanded === cat.category;
-          const totalGoals = cat.goals.length;
-          const completedGoals = cat.goals.filter(g => g.completed).length;
-          const totalProgress = totalGoals > 0 ? Math.round((completedGoals / totalGoals) * 100) : 0;
-          
           const currentScore = cat.currentScore || cat.score;
-          const nextLevel = Math.floor(currentScore) + 1;
+          const totalProgress = cat.goals.length > 0 ? Math.round((cat.goals.filter(g => g.completed).length / cat.goals.length) * 100) : 0;
 
           return (
-            <div key={cat.category} className={`bg-[#1a1612] border-4 border-[#3d352d] transition-all duration-300 relative shadow-2xl ${isExpanded ? 'scale-[1.02]' : 'hover:bg-[#25201b]'}`}>
+            <div key={cat.category} className={`bg-[#1a1612] border-4 border-[#3d352d] transition-all duration-300 relative shadow-2xl ${isExpanded ? 'scale-[1.01]' : 'hover:bg-[#25201b]'}`}>
               <div className="p-8 cursor-pointer flex items-center gap-8" onClick={() => setExpanded(isExpanded ? null : cat.category)}>
-                <div className="w-20 h-20 bg-[#f5e6d3] rounded-full border-4 border-[#3d352d] flex items-center justify-center text-[#3d352d] shadow-lg rotate-[-5deg] relative">
-                   {CATEGORY_ICONS[cat.category] || <Target size={32} />}
-                   <div className="absolute -bottom-2 -right-2 bg-amber-600 text-white w-8 h-8 rounded-full border-2 border-[#3d352d] flex items-center justify-center font-dst text-sm shadow-md">
+                <div className="w-16 h-16 bg-[#f5e6d3] rounded-sm border-4 border-[#3d352d] flex items-center justify-center text-[#3d352d] shadow-lg rotate-[-3deg] relative">
+                   {CATEGORY_ICONS[cat.category] || <Target size={28} />}
+                   <div className="absolute -bottom-2 -right-2 bg-amber-600 text-white w-6 h-6 rounded-sm border-2 border-[#3d352d] flex items-center justify-center font-dst text-xs shadow-md">
                       {Math.floor(currentScore)}
                    </div>
                 </div>
                 <div className="flex-1">
-                  <div className="flex justify-between items-end mb-2">
-                    <h4 className="text-3xl font-dst text-[#f5e6d3] tracking-tighter uppercase">{cat.category}</h4>
-                    <div className="flex items-center gap-2 text-amber-500 font-dst text-xs">
-                       <span>Nível {Math.floor(currentScore)}</span>
-                       <ArrowUpRight size={14} />
-                       <span className="opacity-60 text-[10px]">Alvo: {nextLevel > 10 ? 10 : nextLevel}</span>
-                    </div>
+                  <div className="flex justify-between items-center mb-2">
+                    <h4 className="text-2xl font-dst text-[#f5e6d3] tracking-tighter uppercase">{cat.category}</h4>
+                    <span className="text-[10px] font-dst text-amber-500 uppercase tracking-widest">{cat.goals.length} ESTRATÉGIAS</span>
                   </div>
-                  <div className="flex items-center gap-4">
-                    <div className="flex-1 h-3 bg-[#3d352d] p-0.5 rounded-full overflow-hidden">
-                      <div className="h-full bg-amber-500 rounded-full transition-all duration-1000" style={{ width: `${totalProgress}%` }} />
-                    </div>
-                    <span className="text-[10px] font-dst text-amber-500 font-bold uppercase">{totalProgress}%</span>
+                  <div className="h-2 bg-[#3d352d] rounded-full overflow-hidden">
+                    <div className="h-full bg-amber-500 transition-all duration-1000" style={{ width: `${totalProgress}%` }} />
                   </div>
                 </div>
-                <div className="text-[#f5e6d3]">{isExpanded ? <ChevronUp size={32} /> : <ChevronDown size={32} />}</div>
+                <div className="text-[#f5e6d3]">{isExpanded ? <ChevronUp size={28} /> : <ChevronDown size={28} />}</div>
               </div>
 
               {isExpanded && (
-                <div className="px-8 pb-10 pt-4 space-y-8 animate-in slide-in-from-top-4">
-                  <div className="bg-[#3d352d]/30 p-4 border border-dashed border-amber-500/30 rounded-sm">
-                     <p className="font-dst text-[10px] text-amber-500/80 uppercase tracking-widest text-center">
-                        Para chegar no <span className="text-amber-500 font-bold">Nível {nextLevel > 10 ? 10 : nextLevel}</span>, você deve completar estas estratégias:
-                     </p>
-                  </div>
+                <div className="px-8 pb-10 pt-4 space-y-10 animate-in slide-in-from-top-4">
+                  {cat.goals.length === 0 && (
+                    <div className="text-center py-10 border-2 border-dashed border-[#3d352d] bg-[#3d352d]/10">
+                      <p className="text-[#f5e6d3]/30 font-dst text-xs uppercase tracking-widest italic">Nenhuma intenção de desenvolvimento traçada ainda.</p>
+                    </div>
+                  )}
 
-                  <div className="space-y-6">
+                  <div className="space-y-12">
                     {cat.goals.map(goal => (
-                      <div key={goal.id} className={`p-8 bg-[#f5e6d3] border-4 border-[#3d352d] transition-all relative ${goal.completed ? 'opacity-40 grayscale rotate-1' : 'rotate-[-1deg] shadow-xl'}`}>
-                        <div className="flex flex-col md:flex-row gap-8">
-                          <button onClick={() => updateGoal(cat.category, goal.id, { completed: !goal.completed })} className={`w-14 h-14 border-4 border-[#3d352d] flex items-center justify-center transition-all ${goal.completed ? 'bg-amber-600' : 'bg-white hover:bg-slate-50'}`}>
-                            {goal.completed ? <CheckCircle2 size={32} className="text-white" /> : <div className="w-full h-full" />}
-                          </button>
-                          <div className="flex-1 space-y-6">
-                            <input className={`w-full bg-transparent border-b-4 border-[#3d352d]/20 py-2 font-dst text-2xl text-[#1a1612] outline-none placeholder:text-[#3d352d]/30 ${goal.completed ? 'line-through' : ''}`} placeholder="SUA ESTRATÉGIA DE SOBREVIVÊNCIA..." value={goal.description} onChange={(e) => updateGoal(cat.category, goal.id, { description: e.target.value })} />
-                            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                              <div className="space-y-2">
-                                <label className="font-dst text-[10px] text-[#3d352d]/60 uppercase tracking-widest font-bold ml-1">Indicador de Sucesso</label>
-                                <input className="w-full bg-white border-2 border-[#3d352d] px-4 py-3 text-sm font-bold text-[#1a1612] outline-none" placeholder="Quantidade / Unidade" value={goal.measurable} onChange={(e) => updateGoal(cat.category, goal.id, { measurable: e.target.value })} />
-                              </div>
-                              <div className="space-y-2">
-                                <label className="font-dst text-[10px] text-[#3d352d]/60 uppercase tracking-widest font-bold ml-1">Data Limite</label>
-                                <CustomDatePicker value={goal.dueDate} onChange={(date) => updateGoal(cat.category, goal.id, { dueDate: date })} />
-                              </div>
+                      <div key={goal.id} className={`p-8 bg-[#f5e6d3] border-4 border-[#3d352d] relative shadow-xl transition-all ${goal.completed ? 'opacity-60 grayscale-[0.5]' : ''}`}>
+                        
+                        <div className="flex justify-between items-start mb-8 border-b-2 border-[#3d352d]/10 pb-4">
+                          <div className="flex-1">
+                            <label className="text-[10px] font-dst text-amber-700 uppercase font-black tracking-widest mb-1 block">Intenção de Desenvolvimento</label>
+                            <input 
+                              className="w-full bg-transparent border-none p-0 font-dst text-2xl text-[#1a1612] outline-none placeholder:text-[#3d352d]/20" 
+                              placeholder="EX: Fortalecer resiliência emocional..." 
+                              value={goal.intention} 
+                              onChange={(e) => updateStrategy(cat.category, goal.id, { intention: e.target.value })} 
+                            />
+                          </div>
+                          <button onClick={() => removeStrategy(cat.category, goal.id)} className="p-2 text-[#3d352d]/40 hover:text-red-600 transition-colors"><Trash2 size={18} /></button>
+                        </div>
+
+                        <div className="grid grid-cols-1 md:grid-cols-3 gap-8 mb-10">
+                          <div className="space-y-2 md:col-span-2">
+                            <label className="flex items-center gap-2 font-dst text-[10px] text-[#3d352d] uppercase tracking-widest font-bold">
+                              <Target size={12} className="text-amber-600" /> Meta SMART (Resultado Esperado)
+                            </label>
+                            <textarea 
+                              className="w-full bg-white/50 border-2 border-[#3d352d] px-4 py-3 text-sm font-bold text-[#1a1612] min-h-[80px] outline-none focus:bg-white transition-colors"
+                              placeholder="O que especificamente será alcançado? Como?"
+                              value={goal.smartGoal}
+                              onChange={(e) => updateStrategy(cat.category, goal.id, { smartGoal: e.target.value })}
+                            />
+                          </div>
+                          <div className="space-y-4">
+                            <div className="space-y-2">
+                              <label className="flex items-center gap-2 font-dst text-[10px] text-[#3d352d] uppercase tracking-widest font-bold">
+                                <Clock size={12} className="text-amber-600" /> Horizonte
+                              </label>
+                              <select 
+                                className="w-full bg-white border-2 border-[#3d352d] px-4 py-3 text-xs font-bold text-[#1a1612] outline-none appearance-none"
+                                value={goal.horizon}
+                                onChange={(e) => updateStrategy(cat.category, goal.id, { horizon: e.target.value as any })}
+                              >
+                                <option>Curto</option>
+                                <option>Médio</option>
+                                <option>Longo</option>
+                              </select>
+                            </div>
+                            <div className="space-y-2">
+                              <label className="font-dst text-[10px] text-[#3d352d] uppercase tracking-widest font-bold">Prazo Estimado</label>
+                              <CustomDatePicker value={goal.dueDate} onChange={(d) => updateStrategy(cat.category, goal.id, { dueDate: d })} />
                             </div>
                           </div>
-                          <button onClick={() => removeGoal(cat.category, goal.id)} className="w-14 h-14 flex items-center justify-center text-[#3d352d]/40 hover:text-red-600 transition-colors"><Trash2 size={24} /></button>
+                        </div>
+
+                        <div className="mb-10 space-y-2">
+                           <label className="flex items-center gap-2 font-dst text-[10px] text-[#3d352d] uppercase tracking-widest font-bold">
+                             <CheckCircle size={12} className="text-emerald-600" /> Indicador de Sucesso
+                           </label>
+                           <input 
+                              className="w-full bg-white/50 border-2 border-[#3d352d] px-4 py-3 text-sm font-bold text-[#1a1612] outline-none focus:bg-white"
+                              placeholder="Como você saberá que essa estratégia funcionou?"
+                              value={goal.successIndicator}
+                              onChange={(e) => updateStrategy(cat.category, goal.id, { successIndicator: e.target.value })}
+                           />
+                        </div>
+
+                        {/* Seção 70/20/10 */}
+                        <div className="space-y-6 bg-[#3d352d]/5 p-6 border-2 border-[#3d352d]/10">
+                          <div className="flex items-center gap-2 mb-2">
+                             <HelpCircle size={14} className="text-amber-700" />
+                             <h5 className="font-dst text-xs text-[#3d352d] uppercase font-black">Evidências de Aprendizado (70/20/10)</h5>
+                          </div>
+
+                          {/* 70% Prática */}
+                          <div className="space-y-3">
+                             <div className="flex justify-between items-center">
+                                <span className="text-[10px] font-dst text-emerald-700 uppercase font-bold flex items-center gap-2"><Hammer size={12}/> Prática e Aplicação (70%)</span>
+                                <button onClick={() => addEvidence(cat.category, goal.id, 'practice')} className="text-[9px] font-dst uppercase text-emerald-700 hover:underline">+ Adicionar Teste Prático</button>
+                             </div>
+                             <div className="space-y-2">
+                                {goal.practiceEvidences.map(ev => (
+                                  <div key={ev.id} className="flex gap-2">
+                                     <button onClick={() => updateEvidence(cat.category, goal.id, 'practice', ev.id, { completed: !ev.completed })} className={`w-6 h-6 border-2 border-[#3d352d] flex items-center justify-center flex-shrink-0 ${ev.completed ? 'bg-emerald-600' : 'bg-white'}`}>
+                                        {ev.completed && <CheckCircle2 size={14} className="text-white" />}
+                                     </button>
+                                     <input 
+                                        className="flex-1 bg-transparent border-b border-[#3d352d]/20 text-xs font-bold text-[#1a1612] outline-none" 
+                                        placeholder="Aplicação real ou teste no dia a dia..."
+                                        value={ev.text}
+                                        onChange={(e) => updateEvidence(cat.category, goal.id, 'practice', ev.id, { text: e.target.value })}
+                                     />
+                                  </div>
+                                ))}
+                             </div>
+                          </div>
+
+                          {/* 20% Social */}
+                          <div className="space-y-3">
+                             <div className="flex justify-between items-center">
+                                <span className="text-[10px] font-dst text-blue-700 uppercase font-bold flex items-center gap-2"><MessageSquare size={12}/> Troca e Social (20%)</span>
+                                <button onClick={() => addEvidence(cat.category, goal.id, 'social')} className="text-[9px] font-dst uppercase text-blue-700 hover:underline">+ Adicionar Interação</button>
+                             </div>
+                             <div className="space-y-2">
+                                {goal.socialEvidences.map(ev => (
+                                  <div key={ev.id} className="flex gap-2">
+                                     <button onClick={() => updateEvidence(cat.category, goal.id, 'social', ev.id, { completed: !ev.completed })} className={`w-6 h-6 border-2 border-[#3d352d] flex items-center justify-center flex-shrink-0 ${ev.completed ? 'bg-blue-600' : 'bg-white'}`}>
+                                        {ev.completed && <CheckCircle2 size={14} className="text-white" />}
+                                     </button>
+                                     <input 
+                                        className="flex-1 bg-transparent border-b border-[#3d352d]/20 text-xs font-bold text-[#1a1612] outline-none" 
+                                        placeholder="Feedback, mentoria ou troca com outros..."
+                                        value={ev.text}
+                                        onChange={(e) => updateEvidence(cat.category, goal.id, 'social', ev.id, { text: e.target.value })}
+                                     />
+                                  </div>
+                                ))}
+                             </div>
+                          </div>
+
+                          {/* 10% Conceitual */}
+                          <div className="space-y-3">
+                             <div className="flex justify-between items-center">
+                                <span className="text-[10px] font-dst text-amber-700 uppercase font-bold flex items-center gap-2"><GraduationCap size={12}/> Estudo e Conceito (10%)</span>
+                                <button onClick={() => addEvidence(cat.category, goal.id, 'conceptual')} className="text-[9px] font-dst uppercase text-amber-700 hover:underline">+ Adicionar Estudo</button>
+                             </div>
+                             <div className="space-y-2">
+                                {goal.conceptualEvidences.map(ev => (
+                                  <div key={ev.id} className="flex gap-2">
+                                     <button onClick={() => updateEvidence(cat.category, goal.id, 'conceptual', ev.id, { completed: !ev.completed })} className={`w-6 h-6 border-2 border-[#3d352d] flex items-center justify-center flex-shrink-0 ${ev.completed ? 'bg-amber-600' : 'bg-white'}`}>
+                                        {ev.completed && <CheckCircle2 size={14} className="text-white" />}
+                                     </button>
+                                     <input 
+                                        className="flex-1 bg-transparent border-b border-[#3d352d]/20 text-xs font-bold text-[#1a1612] outline-none" 
+                                        placeholder="Leitura, curso ou palestra de apoio..."
+                                        value={ev.text}
+                                        onChange={(e) => updateEvidence(cat.category, goal.id, 'conceptual', ev.id, { text: e.target.value })}
+                                     />
+                                  </div>
+                                ))}
+                             </div>
+                          </div>
+                        </div>
+
+                        <div className="mt-8 pt-6 border-t border-[#3d352d]/10 flex justify-end">
+                          <button 
+                            onClick={() => updateStrategy(cat.category, goal.id, { completed: !goal.completed })}
+                            className={`px-6 py-3 font-dst text-xs uppercase tracking-widest border-2 border-[#3d352d] transition-all flex items-center gap-2 ${goal.completed ? 'bg-[#3d352d] text-white' : 'bg-white text-[#1a1612] hover:bg-emerald-50'}`}
+                          >
+                             {goal.completed ? 'Estratégia Masterizada' : 'Marcar como Concluído'}
+                             {goal.completed && <Skull size={14} className="text-amber-500" />}
+                          </button>
                         </div>
                       </div>
                     ))}
                   </div>
-                  <button onClick={() => addGoal(cat.category)} className="w-full py-8 border-4 border-dashed border-[#3d352d] text-[#f5e6d3]/40 hover:text-amber-500 hover:border-amber-500 transition-all font-dst text-xl tracking-widest uppercase italic">Criar Nova Estratégia +</button>
+
+                  <button 
+                    onClick={() => addStrategy(cat.category)} 
+                    className="w-full py-6 border-4 border-dashed border-[#3d352d] text-[#f5e6d3]/40 hover:text-amber-500 hover:border-amber-500 transition-all font-dst text-lg tracking-widest uppercase italic bg-black/20"
+                  >
+                    Mapear Nova Estratégia de Desenvolvimento +
+                  </button>
                 </div>
               )}
             </div>
@@ -195,9 +351,11 @@ const GoalTracker: React.FC<GoalTrackerProps> = ({ categories, onUpdateGoals }) 
         })}
       </div>
       
-      <div className="mt-20 flex flex-col items-center opacity-30">
+      <div className="mt-20 flex flex-col items-center opacity-30 px-6 text-center">
         <Skull size={48} className="text-[#f5e6d3] mb-4" />
-        <p className="font-dst text-[10px] uppercase tracking-[0.5em] text-[#f5e6d3]">Don't Starve in 2026</p>
+        <p className="font-dst text-[10px] uppercase tracking-[0.5em] text-[#f5e6d3] max-w-sm">
+          "A sobrevivência não vem apenas do que você faz, mas de quem você se torna no processo."
+        </p>
       </div>
     </div>
   );
