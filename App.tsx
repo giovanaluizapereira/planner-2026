@@ -25,7 +25,6 @@ const App: React.FC = () => {
   const isInitialLoad = useRef(true);
   const saveTimeoutRef = useRef<NodeJS.Timeout | null>(null);
 
-  // Saneador de dados para garantir compatibilidade com versões anteriores e novos campos
   const sanitizeData = (data: any[]): WheelData[] => {
     if (!Array.isArray(data)) return [];
     return data.map(cat => ({
@@ -33,19 +32,33 @@ const App: React.FC = () => {
       goals: (cat.goals || []).map((goal: any) => ({
         id: goal.id || Math.random().toString(36).substr(2, 9),
         intention: goal.intention || goal.text || '',
-        why: goal.why || '',
-        smartGoal: goal.smartGoal || '',
-        withWhom: goal.withWhom || '',
-        successIndicator: goal.successIndicator || '',
+        successCriteria: goal.successCriteria || goal.successIndicator || '',
         dueDate: goal.dueDate || '',
-        horizon: goal.horizon || 'Médio',
-        conceptualEvidences: goal.conceptualEvidences || [],
-        socialEvidences: goal.socialEvidences || [],
-        practiceEvidences: goal.practiceEvidences || [],
+        status: goal.status || 'ativo',
+        milestones: (goal.milestones || []).map((m: any) => ({
+          ...m,
+          strategies: m.strategies || []
+        })),
+        reflections: goal.reflections || [],
         completed: !!goal.completed
       }))
     }));
   };
+
+  // Reseta o estado local quando o usuário muda para evitar vazamento de dados
+  useEffect(() => {
+    if (session?.user?.id) {
+      setBaseData([]);
+      setIsStarted(false);
+      setLastSaved(null);
+      isInitialLoad.current = true;
+      loadData();
+    } else {
+      setBaseData([]);
+      setIsStarted(false);
+      setLastSaved(null);
+    }
+  }, [session?.user?.id]);
 
   useEffect(() => {
     if (!supabase) {
@@ -64,29 +77,34 @@ const App: React.FC = () => {
 
   const loadData = useCallback(async () => {
     if (!supabase || !session?.user) return;
+    
     const { data, error } = await supabase
       .from('planner_runs')
       .select('*')
       .eq('user_id', session.user.id)
       .order('created_at', { ascending: false })
-      .limit(1)
-      .single();
+      .limit(1);
 
-    if (data && !error) {
-      const sanitized = sanitizeData(data.user_data);
+    if (data && data.length > 0 && !error) {
+      const latestRun = data[0];
+      const sanitized = sanitizeData(latestRun.user_data);
       setBaseData(sanitized);
       setIsStarted(true);
-      setLastSaved(new Date(data.created_at));
-      setTimeout(() => { isInitialLoad.current = false; }, 500);
+      setLastSaved(new Date(latestRun.created_at));
     } else {
-      isInitialLoad.current = false;
+      // Caso seja um novo usuário ou ocorra erro, garante que comece do zero
+      setBaseData([]);
+      setIsStarted(false);
+      setLastSaved(null);
     }
-  }, [session]);
-
-  useEffect(() => { loadData(); }, [loadData]);
+    
+    // Pequeno delay para evitar que o save automático dispare antes do load completar
+    setTimeout(() => { isInitialLoad.current = false; }, 800);
+  }, [session?.user?.id]);
 
   const saveToSupabase = useCallback(async (currentData: WheelData[], xp: number) => {
-    if (!supabase || !session?.user || currentData.length === 0) return;
+    if (!supabase || !session?.user || currentData.length === 0 || isInitialLoad.current) return;
+    
     setIsSaving(true);
     try {
       const { error } = await supabase.from('planner_runs').insert([{ 
@@ -101,7 +119,7 @@ const App: React.FC = () => {
     } finally {
       setIsSaving(false);
     }
-  }, [session]);
+  }, [session?.user?.id]);
 
   const currentTotalXP = useMemo(() => {
     const baseXP = baseData.reduce((acc, curr) => acc + (curr.score || 0) * 10, 0);
@@ -110,11 +128,14 @@ const App: React.FC = () => {
   }, [baseData]);
 
   useEffect(() => {
-    if (isInitialLoad.current || !isStarted || !session) return;
+    // Não salva se estiver no carregamento inicial ou se não houver dados
+    if (isInitialLoad.current || !isStarted || !session || baseData.length === 0) return;
+    
     if (saveTimeoutRef.current) clearTimeout(saveTimeoutRef.current);
     saveTimeoutRef.current = setTimeout(() => {
       saveToSupabase(baseData, currentTotalXP);
-    }, 2000);
+    }, 3000); // Delay maior para evitar spam de inserts
+    
     return () => {
       if (saveTimeoutRef.current) clearTimeout(saveTimeoutRef.current);
     };
@@ -194,15 +215,15 @@ const App: React.FC = () => {
                 {isSaving ? (
                   <div className="flex items-center gap-1">
                     <Loader2 size={10} className="animate-spin text-amber-500" />
-                    <span className="text-[8px] text-amber-500/50 uppercase">Salvando...</span>
+                    <span className="text-[8px] text-amber-500/50 uppercase">Sincronizando...</span>
                   </div>
                 ) : lastSaved && (
-                  <span className="text-[8px] text-[#f5e6d3]/30 uppercase">Sincronizado</span>
+                  <span className="text-[8px] text-[#f5e6d3]/30 uppercase">Salvo em {lastSaved.toLocaleTimeString()}</span>
                 )}
               </div>
             </div>
           </div>
-          <button onClick={() => supabase?.auth.signOut()} className="p-2 text-[#f5e6d3]/40 hover:text-red-500 transition-colors"><LogOut size={20} /></button>
+          <button onClick={() => supabase?.auth.signOut()} className="p-2 text-[#f5e6d3]/40 hover:text-red-500 transition-colors" title="Sair da Jornada"><LogOut size={20} /></button>
         </div>
       </nav>
 
