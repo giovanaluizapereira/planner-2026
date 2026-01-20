@@ -20,11 +20,14 @@ const CustomDatePicker: React.FC<{
   onChange: (date: string) => void;
 }> = ({ value, onChange }) => {
   const [isOpen, setIsOpen] = useState(false);
-  const [viewDate, setViewDate] = useState(value ? new Date(value + 'T12:00:00') : new Date());
+  const [viewDate, setViewDate] = useState(() => {
+    if (!value) return new Date();
+    const d = new Date(value + 'T12:00:00');
+    return isNaN(d.getTime()) ? new Date() : d;
+  });
   const containerRef = useRef<HTMLDivElement>(null);
 
   const months = ['janeiro', 'fevereiro', 'março', 'abril', 'maio', 'junho', 'julho', 'agosto', 'setembro', 'outubro', 'novembro', 'dezembro'];
-  const daysShort = ['D', 'S', 'T', 'Q', 'Q', 'S', 'S'];
 
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
@@ -42,7 +45,11 @@ const CustomDatePicker: React.FC<{
     setIsOpen(false);
   };
 
-  const formattedValue = value ? new Date(value + 'T12:00:00').toLocaleDateString('pt-BR') : '';
+  const formattedValue = value && !isNaN(new Date(value + 'T12:00:00').getTime()) 
+    ? new Date(value + 'T12:00:00').toLocaleDateString('pt-BR') 
+    : '';
+
+  const daysInMonth = isNaN(viewDate.getTime()) ? 30 : new Date(viewDate.getFullYear(), viewDate.getMonth() + 1, 0).getDate();
 
   return (
     <div className="relative w-full" ref={containerRef}>
@@ -53,14 +60,16 @@ const CustomDatePicker: React.FC<{
       {isOpen && (
         <div className="absolute bottom-full mb-2 left-0 bg-[#f5e6d3] rounded-[4px] shadow-2xl border-4 border-[#3d352d] z-[100] p-6 w-80">
           <div className="flex justify-between items-center mb-6">
-            <h5 className="font-dst font-bold text-[#1a1612] capitalize text-lg">{months[viewDate.getMonth()]} {viewDate.getFullYear()}</h5>
+            <h5 className="font-dst font-bold text-[#1a1612] capitalize text-lg">
+              {!isNaN(viewDate.getTime()) ? months[viewDate.getMonth()] : 'Mês'} {!isNaN(viewDate.getTime()) ? viewDate.getFullYear() : '2026'}
+            </h5>
             <div className="flex gap-2">
               <button onClick={() => setViewDate(new Date(viewDate.getFullYear(), viewDate.getMonth() - 1))} className="p-2 hover:bg-[#3d352d]/10 rounded-full text-[#3d352d]"><ChevronDown className="rotate-90" size={20} /></button>
               <button onClick={() => setViewDate(new Date(viewDate.getFullYear(), viewDate.getMonth() + 1))} className="p-2 hover:bg-[#3d352d]/10 rounded-full text-[#3d352d]"><ChevronUp className="rotate-90" size={20} /></button>
             </div>
           </div>
           <div className="grid grid-cols-7 gap-y-1">
-            {[...Array(new Date(viewDate.getFullYear(), viewDate.getMonth() + 1, 0).getDate())].map((_, i) => (
+            {[...Array(daysInMonth)].map((_, i) => (
               <button key={i} onClick={() => handleDateSelect(i + 1)} className="h-10 w-10 font-dst rounded-full text-sm flex items-center justify-center hover:bg-[#3d352d] hover:text-[#f5e6d3]">
                 {i + 1}
               </button>
@@ -90,39 +99,39 @@ const GoalTracker: React.FC<GoalTrackerProps> = ({ categories, onUpdateGoals }) 
       conceptualEvidences: [],
       completed: false 
     };
-    onUpdateGoals(category, [...cat.goals, newStrategy]);
+    onUpdateGoals(category, [...(cat.goals || []), newStrategy]);
   };
 
   const updateStrategy = (category: string, goalId: string, updates: Partial<Goal>) => {
     const cat = categories.find(c => c.category === category);
     if (!cat) return;
-    onUpdateGoals(category, cat.goals.map(g => g.id === goalId ? { ...g, ...updates } : g));
+    onUpdateGoals(category, (cat.goals || []).map(g => g.id === goalId ? { ...g, ...updates } : g));
   };
 
   const addEvidence = (category: string, goalId: string, type: 'practice' | 'social' | 'conceptual') => {
     const cat = categories.find(c => c.category === category);
-    const goal = cat?.goals.find(g => g.id === goalId);
+    const goal = (cat?.goals || []).find(g => g.id === goalId);
     if (!goal) return;
 
     const newEvidence: Evidence = { id: Math.random().toString(36).substr(2, 5), text: '', completed: false };
     const field = `${type}Evidences` as keyof Goal;
-    updateStrategy(category, goalId, { [field]: [...(goal[field] as Evidence[]), newEvidence] });
+    updateStrategy(category, goalId, { [field]: [...((goal[field] as Evidence[]) || []), newEvidence] });
   };
 
   const updateEvidence = (category: string, goalId: string, type: 'practice' | 'social' | 'conceptual', evidenceId: string, updates: Partial<Evidence>) => {
     const cat = categories.find(c => c.category === category);
-    const goal = cat?.goals.find(g => g.id === goalId);
+    const goal = (cat?.goals || []).find(g => g.id === goalId);
     if (!goal) return;
 
     const field = `${type}Evidences` as keyof Goal;
-    const newList = (goal[field] as Evidence[]).map(e => e.id === evidenceId ? { ...e, ...updates } : e);
+    const newList = ((goal[field] as Evidence[]) || []).map(e => e.id === evidenceId ? { ...e, ...updates } : e);
     updateStrategy(category, goalId, { [field]: newList });
   };
 
   const removeStrategy = (category: string, goalId: string) => {
     const cat = categories.find(c => c.category === category);
     if (!cat) return;
-    onUpdateGoals(category, cat.goals.filter(g => g.id !== goalId));
+    onUpdateGoals(category, (cat.goals || []).filter(g => g.id !== goalId));
   };
 
   return (
@@ -151,10 +160,11 @@ const GoalTracker: React.FC<GoalTrackerProps> = ({ categories, onUpdateGoals }) 
       </div>
 
       <div className="flex flex-col gap-8">
-        {categories.map((cat) => {
+        {(categories || []).map((cat) => {
           const isExpanded = expanded === cat.category;
           const currentScore = cat.currentScore || cat.score;
-          const totalProgress = cat.goals.length > 0 ? Math.round((cat.goals.filter(g => g.completed).length / cat.goals.length) * 100) : 0;
+          const goals = cat.goals || [];
+          const totalProgress = goals.length > 0 ? Math.round((goals.filter(g => g.completed).length / goals.length) * 100) : 0;
 
           return (
             <div key={cat.category} className={`bg-[#1a1612] border-4 border-[#3d352d] transition-all duration-300 relative shadow-2xl ${isExpanded ? 'scale-[1.01]' : 'hover:bg-[#25201b]'}`}>
@@ -168,7 +178,7 @@ const GoalTracker: React.FC<GoalTrackerProps> = ({ categories, onUpdateGoals }) 
                 <div className="flex-1">
                   <div className="flex justify-between items-center mb-2">
                     <h4 className="text-2xl font-dst text-[#f5e6d3] tracking-tighter uppercase">{cat.category}</h4>
-                    <span className="text-[10px] font-dst text-amber-500 uppercase tracking-widest">{cat.goals.length} ESTRATÉGIAS</span>
+                    <span className="text-[10px] font-dst text-amber-500 uppercase tracking-widest">{goals.length} ESTRATÉGIAS</span>
                   </div>
                   <div className="h-2 bg-[#3d352d] rounded-full overflow-hidden">
                     <div className="h-full bg-amber-500 transition-all duration-1000" style={{ width: `${totalProgress}%` }} />
@@ -179,14 +189,14 @@ const GoalTracker: React.FC<GoalTrackerProps> = ({ categories, onUpdateGoals }) 
 
               {isExpanded && (
                 <div className="px-8 pb-10 pt-4 space-y-10 animate-in slide-in-from-top-4">
-                  {cat.goals.length === 0 && (
+                  {goals.length === 0 && (
                     <div className="text-center py-10 border-2 border-dashed border-[#3d352d] bg-[#3d352d]/10">
                       <p className="text-[#f5e6d3]/30 font-dst text-xs uppercase tracking-widest italic">Nenhuma intenção de desenvolvimento traçada ainda.</p>
                     </div>
                   )}
 
                   <div className="space-y-12">
-                    {cat.goals.map(goal => (
+                    {goals.map(goal => (
                       <div key={goal.id} className={`p-8 bg-[#f5e6d3] border-4 border-[#3d352d] relative shadow-xl transition-all ${goal.completed ? 'opacity-60 grayscale-[0.5]' : ''}`}>
                         
                         <div className="flex justify-between items-start mb-8 border-b-2 border-[#3d352d]/10 pb-4">
@@ -248,21 +258,19 @@ const GoalTracker: React.FC<GoalTrackerProps> = ({ categories, onUpdateGoals }) 
                            />
                         </div>
 
-                        {/* Seção 70/20/10 */}
                         <div className="space-y-6 bg-[#3d352d]/5 p-6 border-2 border-[#3d352d]/10">
                           <div className="flex items-center gap-2 mb-2">
                              <HelpCircle size={14} className="text-amber-700" />
                              <h5 className="font-dst text-xs text-[#3d352d] uppercase font-black">Evidências de Aprendizado (70/20/10)</h5>
                           </div>
 
-                          {/* 70% Prática */}
                           <div className="space-y-3">
                              <div className="flex justify-between items-center">
                                 <span className="text-[10px] font-dst text-emerald-700 uppercase font-bold flex items-center gap-2"><Hammer size={12}/> Prática e Aplicação (70%)</span>
                                 <button onClick={() => addEvidence(cat.category, goal.id, 'practice')} className="text-[9px] font-dst uppercase text-emerald-700 hover:underline">+ Adicionar Teste Prático</button>
                              </div>
                              <div className="space-y-2">
-                                {goal.practiceEvidences.map(ev => (
+                                {(goal.practiceEvidences || []).map(ev => (
                                   <div key={ev.id} className="flex gap-2">
                                      <button onClick={() => updateEvidence(cat.category, goal.id, 'practice', ev.id, { completed: !ev.completed })} className={`w-6 h-6 border-2 border-[#3d352d] flex items-center justify-center flex-shrink-0 ${ev.completed ? 'bg-emerald-600' : 'bg-white'}`}>
                                         {ev.completed && <CheckCircle2 size={14} className="text-white" />}
@@ -278,14 +286,13 @@ const GoalTracker: React.FC<GoalTrackerProps> = ({ categories, onUpdateGoals }) 
                              </div>
                           </div>
 
-                          {/* 20% Social */}
                           <div className="space-y-3">
                              <div className="flex justify-between items-center">
                                 <span className="text-[10px] font-dst text-blue-700 uppercase font-bold flex items-center gap-2"><MessageSquare size={12}/> Troca e Social (20%)</span>
                                 <button onClick={() => addEvidence(cat.category, goal.id, 'social')} className="text-[9px] font-dst uppercase text-blue-700 hover:underline">+ Adicionar Interação</button>
                              </div>
                              <div className="space-y-2">
-                                {goal.socialEvidences.map(ev => (
+                                {(goal.socialEvidences || []).map(ev => (
                                   <div key={ev.id} className="flex gap-2">
                                      <button onClick={() => updateEvidence(cat.category, goal.id, 'social', ev.id, { completed: !ev.completed })} className={`w-6 h-6 border-2 border-[#3d352d] flex items-center justify-center flex-shrink-0 ${ev.completed ? 'bg-blue-600' : 'bg-white'}`}>
                                         {ev.completed && <CheckCircle2 size={14} className="text-white" />}
@@ -301,14 +308,13 @@ const GoalTracker: React.FC<GoalTrackerProps> = ({ categories, onUpdateGoals }) 
                              </div>
                           </div>
 
-                          {/* 10% Conceitual */}
                           <div className="space-y-3">
                              <div className="flex justify-between items-center">
                                 <span className="text-[10px] font-dst text-amber-700 uppercase font-bold flex items-center gap-2"><GraduationCap size={12}/> Estudo e Conceito (10%)</span>
                                 <button onClick={() => addEvidence(cat.category, goal.id, 'conceptual')} className="text-[9px] font-dst uppercase text-amber-700 hover:underline">+ Adicionar Estudo</button>
                              </div>
                              <div className="space-y-2">
-                                {goal.conceptualEvidences.map(ev => (
+                                {(goal.conceptualEvidences || []).map(ev => (
                                   <div key={ev.id} className="flex gap-2">
                                      <button onClick={() => updateEvidence(cat.category, goal.id, 'conceptual', ev.id, { completed: !ev.completed })} className={`w-6 h-6 border-2 border-[#3d352d] flex items-center justify-center flex-shrink-0 ${ev.completed ? 'bg-amber-600' : 'bg-white'}`}>
                                         {ev.completed && <CheckCircle2 size={14} className="text-white" />}
