@@ -1,16 +1,21 @@
 
 import { createClient } from '@supabase/supabase-js';
 
-// Tenta pegar das variáveis de ambiente da Vercel
-const supabaseUrl = process.env.SUPABASE_URL || '';
-const supabaseAnonKey = process.env.SUPABASE_ANON_KEY || '';
+// Tenta detectar as chaves em diferentes contextos (Vercel, Vite, Global)
+const getEnv = (name: string) => {
+  if (typeof process !== 'undefined' && process.env && process.env[name]) return process.env[name];
+  // @ts-ignore
+  if (typeof import.meta !== 'undefined' && import.meta.env && import.meta.env[`VITE_${name}`]) return import.meta.env[`VITE_${name}`];
+  return '';
+};
 
-// Se as variáveis estiverem vazias, o cliente ainda será criado mas emitirá erro ao ser usado,
-// facilitando o debug no console do navegador.
+const supabaseUrl = getEnv('SUPABASE_URL');
+const supabaseAnonKey = getEnv('SUPABASE_ANON_KEY');
+
 export const supabase = (supabaseUrl && supabaseAnonKey) 
   ? createClient(supabaseUrl, supabaseAnonKey)
   : null;
 
 if (!supabase) {
-  console.error("SUPABASE ERROR: Chaves não detectadas. Verifique se você fez o REDEPLOY na Vercel após configurar as Environment Variables.");
+  console.warn("SUPABASE WARNING: Chaves não detectadas. Certifique-se de fazer o REDEPLOY na Vercel.");
 }
