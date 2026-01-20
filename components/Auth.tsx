@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { supabase } from '../lib/supabase';
-import { Skull, Mail, Lock, Loader2, LogIn, AlertTriangle, RefreshCw } from 'lucide-react';
+import { Skull, Mail, Lock, Loader2, LogIn, AlertTriangle, RefreshCw, ExternalLink } from 'lucide-react';
 
 export const Auth: React.FC = () => {
   const [loading, setLoading] = useState(false);
@@ -11,7 +11,6 @@ export const Auth: React.FC = () => {
 
   const handleAuth = async (e: React.FormEvent) => {
     e.preventDefault();
-    
     setLoading(true);
     setMessage(null);
 
@@ -20,14 +19,20 @@ export const Auth: React.FC = () => {
         ? await supabase.auth.signUp({ email, password })
         : await supabase.auth.signInWithPassword({ email, password });
 
-      if (error) throw error;
+      if (error) {
+        let errorMsg = error.message;
+        if (errorMsg.toLowerCase().includes('api key') || error.status === 401 || error.status === 403) {
+          errorMsg = "CONEXÃO RECUSADA: O Supabase retornou 'Invalid API Key'. Isso quase sempre significa que seu projeto está PAUSADO no dashboard do Supabase ou as chaves foram alteradas. Por favor, verifique se o projeto está ativo.";
+        }
+        throw new Error(errorMsg);
+      }
       
       if (isSignUp) {
-        setMessage({ type: 'success', text: 'Sobrevivente registrado! Verifique sua caixa de entrada para confirmar o e-mail.' });
+        setMessage({ type: 'success', text: 'Sobrevivente registrado! Verifique seu e-mail para confirmar a conta.' });
       }
     } catch (error: any) {
       console.error("Auth Error:", error);
-      setMessage({ type: 'error', text: error.message || 'Erro de conexão com o servidor.' });
+      setMessage({ type: 'error', text: error.message || 'Erro inesperado de autenticação.' });
     } finally {
       setLoading(false);
     }
@@ -91,17 +96,26 @@ export const Auth: React.FC = () => {
             className="w-full bg-[#f5e6d3] hover:bg-white text-[#1a1612] py-4 font-dst text-xl uppercase tracking-widest border-4 border-[#3d352d] shadow-lg transition-all flex items-center justify-center gap-3 active:scale-95 disabled:opacity-50"
           >
             {loading ? <Loader2 size={24} className="animate-spin" /> : <LogIn size={20} />}
-            {isSignUp ? 'Criar Conta' : 'Entrar na Run'}
+            {isSignUp ? 'Criar Cadastro' : 'Entrar na Run'}
           </button>
         </form>
 
-        <div className="mt-8 pt-6 border-t border-[#3d352d] text-center">
+        <div className="mt-8 pt-6 border-t border-[#3d352d] flex flex-col items-center gap-4">
           <button 
             onClick={() => { setIsSignUp(!isSignUp); setMessage(null); }}
             className="text-[10px] font-dst text-amber-500 uppercase tracking-widest hover:underline"
           >
-            {isSignUp ? 'Já tem uma run? Login' : 'Novo por aqui? Criar Cadastro'}
+            {isSignUp ? 'Já tem conta? Login' : 'Novo por aqui? Criar Cadastro'}
           </button>
+          
+          <a 
+            href="https://supabase.com/dashboard/projects" 
+            target="_blank" 
+            rel="noopener noreferrer"
+            className="flex items-center gap-2 text-[8px] text-[#f5e6d3]/30 uppercase tracking-[0.2em] hover:text-amber-500 transition-colors"
+          >
+            Verificar Projeto no Supabase <ExternalLink size={10} />
+          </a>
         </div>
       </div>
     </div>
