@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { supabase } from '../lib/supabase';
 import { Skull, Mail, Lock, Loader2, LogIn, AlertTriangle, RefreshCw, ExternalLink, Settings, CheckCircle2, Info } from 'lucide-react';
@@ -145,7 +144,7 @@ export const Auth: React.FC = () => {
             </div>
             <p className="text-[9px] text-[#f5e6d3]/40 leading-relaxed uppercase">
               Para logar sem e-mail, no Supabase vá em:<br/>
-              <span className="text-[#f5e6d3]/80">Authentication > Providers > Email</span><br/>
+              <span className="text-[#f5e6d3]/80">Authentication &gt; Providers &gt; Email</span><br/>
               e desligue a chave <span className="text-white italic">"Confirm email"</span>.<br/>
               <span className="text-red-500/60 mt-1 block">(Você está no menu "Email Templates", mude para a aba "Providers")</span>
             </p>
