@@ -1,24 +1,35 @@
 
-export interface Evidence {
+export interface Strategy {
   id: string;
   text: string;
   completed: boolean;
 }
 
+export interface Milestone {
+  id: string;
+  description: string;
+  targetDate: string;
+  strategies: Strategy[];
+  completed: boolean;
+}
+
+export interface Reflection {
+  date: string;
+  whatWorked: string;
+  whatDidnt: string;
+  adjustments: string;
+  type: 'prorrogacao' | 'ajuste' | 'conclusao';
+}
+
 export interface Goal {
   id: string;
-  intention: string;       // O quê? (Intenção/Habilidade)
-  why: string;             // Por quê? (Sentido/Importância)
-  smartGoal: string;       // Como? (O plano de ação geral)
-  withWhom: string;        // Com quem? (Apoio/Envolvidos)
-  successIndicator: string; // Como saberei que funcionou?
-  dueDate: string;         // Quando? (Data)
-  horizon: 'Curto' | 'Médio' | 'Longo'; // Quando? (Horizonte)
+  intention: string;       // O que eu quero alcançar
+  successCriteria: string;  // Quando considero atingida
+  dueDate: string;          // Até quando (Data Final)
+  status: 'ativo' | 'reflexao_pendente' | 'concluido';
   
-  // Estrutura 10/20/70
-  conceptualEvidences: Evidence[]; // 10% - Teoria/Cursos
-  socialEvidences: Evidence[];     // 20% - Feedbacks/Trocas
-  practiceEvidences: Evidence[];   // 70% - Aplicação real
+  milestones: Milestone[];
+  reflections: Reflection[];
   
   completed: boolean;
 }
