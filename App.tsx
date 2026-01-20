@@ -25,6 +25,26 @@ const App: React.FC = () => {
   const isInitialLoad = useRef(true);
   const saveTimeoutRef = useRef<NodeJS.Timeout | null>(null);
 
+  // Saneador de dados para garantir compatibilidade com versões anteriores
+  const sanitizeData = (data: any[]): WheelData[] => {
+    if (!Array.isArray(data)) return [];
+    return data.map(cat => ({
+      ...cat,
+      goals: (cat.goals || []).map((goal: any) => ({
+        id: goal.id || Math.random().toString(36).substr(2, 9),
+        intention: goal.intention || goal.text || '', // Fallback para campo 'text' antigo
+        smartGoal: goal.smartGoal || '',
+        successIndicator: goal.successIndicator || '',
+        dueDate: goal.dueDate || '',
+        horizon: goal.horizon || 'Médio',
+        practiceEvidences: goal.practiceEvidences || [],
+        socialEvidences: goal.socialEvidences || [],
+        conceptualEvidences: goal.conceptualEvidences || [],
+        completed: !!goal.completed
+      }))
+    }));
+  };
+
   // Gerenciamento de Sessão
   useEffect(() => {
     if (!supabase) {
@@ -53,10 +73,10 @@ const App: React.FC = () => {
       .single();
 
     if (data && !error) {
-      setBaseData(data.user_data);
+      const sanitized = sanitizeData(data.user_data);
+      setBaseData(sanitized);
       setIsStarted(true);
       setLastSaved(new Date(data.created_at));
-      // Marcar que o carregamento inicial terminou para não disparar autosave imediatamente
       setTimeout(() => { isInitialLoad.current = false; }, 500);
     } else {
       isInitialLoad.current = false;
@@ -84,23 +104,18 @@ const App: React.FC = () => {
     }
   }, [session]);
 
-  // Cálculo de XP (Memoizado para usar no salvamento)
   const currentTotalXP = useMemo(() => {
-    const baseXP = baseData.reduce((acc, curr) => acc + curr.score * 10, 0);
-    const goalsXP = baseData.reduce((acc, curr) => acc + (curr.goals.filter(g => g.completed).length * 150), 0);
+    const baseXP = baseData.reduce((acc, curr) => acc + (curr.score || 0) * 10, 0);
+    const goalsXP = baseData.reduce((acc, curr) => acc + ((curr.goals || []).filter(g => g.completed).length * 150), 0);
     return Math.floor(baseXP + goalsXP);
   }, [baseData]);
 
-  // Efeito de Auto-save (Debounce)
   useEffect(() => {
     if (isInitialLoad.current || !isStarted || !session) return;
-
     if (saveTimeoutRef.current) clearTimeout(saveTimeoutRef.current);
-
     saveTimeoutRef.current = setTimeout(() => {
       saveToSupabase(baseData, currentTotalXP);
-    }, 2000); // 2 segundos de delay após a última alteração
-
+    }, 2000);
     return () => {
       if (saveTimeoutRef.current) clearTimeout(saveTimeoutRef.current);
     };
@@ -129,18 +144,18 @@ const App: React.FC = () => {
 
   const handleConfirmScores = useCallback((results: { category: string; score: number }[]) => {
     const initialData = results.map(r => ({ ...r, goals: [] }));
-    isInitialLoad.current = false; // Garante que o primeiro save manual ou via IA funcione
+    isInitialLoad.current = false;
     setBaseData(initialData);
     setIsStarted(true);
-    // Força o primeiro save imediato
     saveToSupabase(initialData, initialData.reduce((acc, curr) => acc + curr.score * 10, 0));
   }, [saveToSupabase]);
 
   const evolvedData = useMemo(() => {
     return baseData.map(item => {
-      const totalGoals = item.goals.length;
+      const goals = item.goals || [];
+      const totalGoals = goals.length;
       if (totalGoals === 0) return { ...item, currentScore: item.score };
-      const completedCount = item.goals.filter(g => g.completed).length;
+      const completedCount = goals.filter(g => g.completed).length;
       const bonus = (completedCount / totalGoals) * (10 - item.score);
       return { ...item, currentScore: parseFloat((item.score + bonus).toFixed(1)) };
     });
