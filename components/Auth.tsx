@@ -1,7 +1,7 @@
 
 import React, { useState } from 'react';
 import { supabase } from '../lib/supabase';
-import { Skull, Mail, Lock, Loader2, LogIn } from 'lucide-react';
+import { Skull, Mail, Lock, Loader2, LogIn, AlertTriangle } from 'lucide-react';
 
 export const Auth: React.FC = () => {
   const [loading, setLoading] = useState(false);
@@ -16,7 +16,7 @@ export const Auth: React.FC = () => {
     if (!supabase) {
       setMessage({ 
         type: 'error', 
-        text: 'Erro de Configuração: As variáveis SUPABASE_URL e SUPABASE_ANON_KEY não foram detectadas. Verifique as configurações na Vercel.' 
+        text: 'CONFIGURAÇÃO PENDENTE: As chaves do Supabase foram adicionadas? Se sim, você precisa fazer um REDEPLOY na Vercel para que elas entrem em vigor.' 
       });
       return;
     }
@@ -32,11 +32,11 @@ export const Auth: React.FC = () => {
       if (error) throw error;
       
       if (isSignUp) {
-        setMessage({ type: 'success', text: 'Cadastro realizado! Verifique seu e-mail para confirmar.' });
+        setMessage({ type: 'success', text: 'Cadastro realizado! Verifique seu e-mail (incluindo spam) para confirmar o acesso.' });
       }
     } catch (error: any) {
-      console.error("Erro de Autenticação:", error);
-      setMessage({ type: 'error', text: error.message || 'Erro na comunicação com o servidor.' });
+      console.error("Auth Error:", error);
+      setMessage({ type: 'error', text: error.message || 'Erro de conexão com o servidor de sobrevivência.' });
     } finally {
       setLoading(false);
     }
@@ -45,7 +45,7 @@ export const Auth: React.FC = () => {
   return (
     <div className="min-h-screen bg-[#1a1612] flex items-center justify-center p-6">
       <div className="max-w-md w-full bg-[#25201b] border-4 border-[#3d352d] p-10 shadow-2xl relative overflow-hidden">
-        {/* Cantoneiras Decorativas */}
+        {/* Cantoneiras */}
         <div className="absolute top-0 left-0 w-4 h-4 border-t-2 border-l-2 border-amber-600/30" />
         <div className="absolute bottom-0 right-0 w-4 h-4 border-b-2 border-r-2 border-amber-600/30" />
 
@@ -67,7 +67,7 @@ export const Auth: React.FC = () => {
               required
               value={email}
               onChange={(e) => setEmail(e.target.value)}
-              className="w-full bg-[#1a1612] border-2 border-[#3d352d] px-4 py-3 font-dst text-[#f5e6d3] outline-none focus:border-amber-600 transition-colors"
+              className="w-full bg-[#1a1612] border-2 border-[#3d352d] px-4 py-3 font-dst text-[#f5e6d3] outline-none focus:border-amber-600 transition-colors placeholder:opacity-20"
               placeholder="sobrevivente@exemplo.com"
             />
           </div>
@@ -81,17 +81,16 @@ export const Auth: React.FC = () => {
               required
               value={password}
               onChange={(e) => setPassword(e.target.value)}
-              className="w-full bg-[#1a1612] border-2 border-[#3d352d] px-4 py-3 font-dst text-[#f5e6d3] outline-none focus:border-amber-600 transition-colors"
+              className="w-full bg-[#1a1612] border-2 border-[#3d352d] px-4 py-3 font-dst text-[#f5e6d3] outline-none focus:border-amber-600 transition-colors placeholder:opacity-20"
               placeholder="••••••••"
             />
           </div>
 
           {message && (
-            <div className={`p-4 text-[10px] font-dst uppercase tracking-widest border-2 leading-relaxed ${
-              message.type === 'error' 
-                ? 'bg-red-900/20 border-red-900/50 text-red-400' 
-                : 'bg-emerald-900/20 border-emerald-900/50 text-emerald-400'
+            <div className={`p-4 text-[10px] font-dst uppercase tracking-widest border-2 leading-relaxed flex gap-3 ${
+              message.type === 'error' ? 'bg-red-900/20 border-red-900/50 text-red-400' : 'bg-emerald-900/20 border-emerald-900/50 text-emerald-400'
             }`}>
+              {message.type === 'error' && <AlertTriangle size={16} className="shrink-0" />}
               {message.text}
             </div>
           )}
@@ -102,19 +101,16 @@ export const Auth: React.FC = () => {
             className="w-full bg-[#f5e6d3] hover:bg-white text-[#1a1612] py-4 font-dst text-xl uppercase tracking-widest border-4 border-[#3d352d] shadow-lg transition-all flex items-center justify-center gap-3 active:scale-95 disabled:opacity-50"
           >
             {loading ? <Loader2 size={24} className="animate-spin" /> : <LogIn size={20} />}
-            {isSignUp ? 'Criar Conta' : 'Entrar na Run'}
+            {isSignUp ? 'Criar Nova Run' : 'Entrar na Run'}
           </button>
         </form>
 
         <div className="mt-8 pt-6 border-t border-[#3d352d] text-center">
           <button 
-            onClick={() => {
-              setIsSignUp(!isSignUp);
-              setMessage(null);
-            }}
+            onClick={() => { setIsSignUp(!isSignUp); setMessage(null); }}
             className="text-[10px] font-dst text-amber-500 uppercase tracking-widest hover:underline"
           >
-            {isSignUp ? 'Já tem conta? Faça Login' : 'Novo por aqui? Criar Cadastro'}
+            {isSignUp ? 'Já é um sobrevivente? Login' : 'Novo no mundo? Criar Cadastro'}
           </button>
         </div>
       </div>
