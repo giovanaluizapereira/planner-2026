@@ -87,88 +87,88 @@ export const CATEGORY_ICONS: Record<string, React.ReactNode> = Object.fromEntrie
 
 export const CATEGORY_QUESTIONS: Record<string, string[]> = {
   'Carreira & Trabalho': [
-    'Quão satisfeito você está com suas responsabilidades atuais?',
-    'Você sente que tem oportunidades reais de crescimento?',
-    'Seu trabalho está alinhado com seu propósito de vida?',
-    'Como está o equilíbrio entre sua vida profissional e pessoal?',
-    'Você se sente reconhecido e valorizado pelo seu desempenho?'
+    'De 1 a 10, quão satisfeito você está com suas responsabilidades atuais?',
+    'Qual nota você dá para as suas chances reais de crescimento hoje?',
+    'O quanto você sente que seu trabalho está alinhado ao seu propósito?',
+    'Como você avalia o equilíbrio entre seu trabalho e sua vida pessoal?',
+    'Quão valorizado e reconhecido você se sente no seu ambiente profissional?'
   ],
   'Finanças & Dinheiro': [
-    'Sua renda atual cobre suas necessidades e sobra para o futuro?',
-    'Quão sob controle estão suas dívidas e gastos mensais?',
-    'Você se sente seguro financeiramente para emergências?',
-    'Você possui um plano claro de investimentos ou poupança?',
-    'Sua relação com o dinheiro gera tranquilidade ou estresse?'
+    'Qual nota você dá para o quanto sua renda atual supre suas necessidades?',
+    'De 1 a 10, quão sob controle estão suas dívidas e gastos mensais?',
+    'O quanto você se sente seguro financeiramente para lidar com imprevistos?',
+    'Qual nota você dá para a clareza do seu plano de investimentos ou poupança?',
+    'Quão alta é a sua sensação de paz e tranquilidade em relação ao dinheiro?'
   ],
   'Saúde & Fitness': [
-    'Quão satisfeito você está com sua disposição física diária?',
-    'Como você avalia sua qualidade de sono e alimentação?',
-    'Com que frequência você pratica exercícios ou cuida do corpo?',
-    'Como está sua imunidade e frequência de problemas de saúde?',
-    'Você se sente confortável e feliz com sua imagem corporal?'
+    'De 1 a 10, qual nota você dá para a sua disposição física diária?',
+    'Como você avalia a qualidade do seu sono atualmente?',
+    'Qual nota você dá para a qualidade da sua alimentação no dia a dia?',
+    'Quão satisfeito você está com a sua frequência de exercícios físicos?',
+    'De 1 a 10, o quanto você está feliz com a sua imagem corporal e saúde?'
   ],
   'Família': [
-    'Como está a qualidade do tempo que você passa com seus familiares?',
-    'Há harmonia e suporte mútuo nas relações familiares?',
-    'Você se sente presente na vida das pessoas que ama?',
-    'Como você lida com conflitos ou desentendimentos em família?',
-    'Você sente que suas raízes familiares te dão força?'
+    'Qual nota você dá para a qualidade do tempo que passa com sua família?',
+    'De 1 a 10, quão harmônico e leve é o ambiente nas suas relações familiares?',
+    'O quanto você se sente presente e conectado com as pessoas que ama?',
+    'Qual nota você dá para a sua habilidade de resolver conflitos em família?',
+    'Quão satisfeito você está com o apoio que recebe dos seus familiares?'
   ],
   'Amor & Romance': [
-    'Quão realizado você se sente em sua vida afetiva/romântica?',
-    'Existe parceria, respeito e cumplicidade no relacionamento?',
-    'Você se sente amado e valorizado?',
-    'Como está a comunicação e a intimidade com seu parceiro(a)?',
-    'Você dedica tempo de qualidade para nutrir o romance?'
+    'De 1 a 10, quão realizado você se sente em sua vida afetiva/romântica?',
+    'Qual nota você dá para o nível de cumplicidade e respeito na relação?',
+    'O quanto você se sente amado e desejado pelo seu parceiro(a)?',
+    'Como você avalia a qualidade da comunicação e intimidade entre vocês?',
+    'De 1 a 10, quão satisfeito você está com o tempo dedicado ao romance?'
   ],
   'Vida Social & Amizades': [
-    'Você possui amigos em quem pode confiar plenamente?',
-    'Quão ativa é sua vida social fora do ambiente de trabalho?',
-    'Você se sente pertencente a um grupo ou comunidade?',
-    'Suas amizades trazem alegria e inspiração para sua vida?',
-    'Você consegue ser você mesmo quando está com seus amigos?'
+    'Qual nota você dá para o nível de confiança que tem em seus amigos?',
+    'De 1 a 10, quão satisfeito você está com a sua vida social atual?',
+    'O quanto você sente que pertence e é aceito nos seus grupos sociais?',
+    'Qual nota você dá para a alegria e inspiração que suas amizades te trazem?',
+    'Quão livre e autêntico você se sente quando está com seus amigos?'
   ],
   'Crescimento Pessoal': [
-    'Você está aprendendo coisas novas regularmente?',
-    'Quão satisfeito está com seu desenvolvimento intelectual?',
-    'Você investe tempo em ler ou fazer cursos de interesse?',
-    'Você sente que está evoluindo como ser humano?',
-    'Você tem clareza sobre suas metas e objetivos de vida?'
+    'De 1 a 10, o quanto você sente que está aprendendo coisas novas?',
+    'Qual nota você dá para o seu nível de desenvolvimento intelectual hoje?',
+    'Quão satisfeito você está com o tempo que dedica aos seus estudos e leituras?',
+    'O quanto você sente que evoluiu como pessoa no último ano?',
+    'De 1 a 10, qual nota você dá para a clareza das suas metas de vida?'
   ],
   'Recreação & Diversão': [
-    'Você reserva tempo de qualidade para hobbies e diversão?',
-    'Sua vida tem momentos genuínos de relaxamento e prazer?',
-    'Quão satisfeito você está com suas últimas férias ou folgas?',
-    'Você se permite rir e brincar sem culpa?',
-    'Seus momentos de lazer realmente recarregam suas energias?'
+    'Qual nota você dá para a qualidade dos seus momentos de lazer?',
+    'De 1 a 10, o quanto você se permite relaxar e brincar sem sentir culpa?',
+    'Quão satisfeito você está com as suas opções de entretenimento e hobbies?',
+    'O quanto você sente que seus momentos de diversão recarregam suas baterias?',
+    'De 1 a 10, qual nota você dá para a leveza da sua rotina fora do trabalho?'
   ],
   'Ambiente Físico': [
-    'Sua casa é um lugar de descanso e conforto real?',
-    'A organização dos seus espaços ajuda na sua rotina?',
-    'Você se sente seguro e produtivo nos lugares que frequenta?',
-    'Seu ambiente reflete sua personalidade e valores?',
-    'Você cuida da limpeza e manutenção dos seus pertences?'
+    'Qual nota você dá para o conforto e acolhimento da sua casa hoje?',
+    'De 1 a 10, quão satisfeito você está com a organização dos seus espaços?',
+    'O quanto seu ambiente atual te ajuda a ser produtivo e focado?',
+    'Qual nota você dá para a segurança e localização de onde você vive?',
+    'De 1 a 10, o quanto o seu ambiente físico reflete quem você é?'
   ],
   'Contribuição & Impacto': [
-    'Você sente que seu trabalho ou ações ajudam outras pessoas?',
-    'Você participa de projetos voluntários ou causas sociais?',
-    'Quão satisfeito você está com sua contribuição para o mundo?',
-    'Você costuma praticar atos generosos sem esperar nada em troca?',
-    'Você se sente parte da solução dos problemas da sociedade?'
+    'De 1 a 10, o quanto você sente que suas ações ajudam outras pessoas?',
+    'Qual nota você dá para o seu nível de envolvimento em causas sociais?',
+    'Quão satisfeito você está com o impacto que deixa no mundo hoje?',
+    'O quanto você se sente realizado ao praticar atos de generosidade?',
+    'De 1 a 10, qual nota você dá para a sua utilidade para a sociedade?'
   ],
   'Espiritualidade': [
-    'Você sente conexão com algo maior ou paz interior?',
-    'Quão frequentes são seus momentos de reflexão ou oração?',
-    'Sua vida parece ter um significado profundo e transcendente?',
-    'Você vive de acordo com seus valores espirituais?',
-    'Como você lida com as questões existenciais da vida?'
+    'Qual nota você dá para o seu nível de paz interior e conexão espiritual?',
+    'De 1 a 10, quão satisfeito você está com sua prática meditativa ou de fé?',
+    'O quanto você sente que sua vida possui um significado profundo?',
+    'Qual nota você dá para a sua resiliência baseada em suas crenças?',
+    'De 1 a 10, o quanto você vive de acordo com seus valores espirituais?'
   ],
   'Saúde Mental & Emocional': [
-    'Quão bem você lida com suas emoções e estresse?',
-    'Sua autoestima está em um nível saudável?',
-    'Você reserva tempo para o autoconhecimento?',
-    'Como você avalia sua resiliência diante de desafios?',
-    'Você sente que tem clareza mental e paz de espírito?'
+    'Qual nota você dá para a sua habilidade de lidar com o estresse?',
+    'De 1 a 10, o quanto você se sente no controle das suas emoções?',
+    'Quão satisfeito você está com o seu nível de autoestima atual?',
+    'Qual nota você dá para o tempo que dedica ao seu autoconhecimento?',
+    'De 1 a 10, quão alta é a sua sensação frequente de paz de espírito?'
   ]
 };
 
