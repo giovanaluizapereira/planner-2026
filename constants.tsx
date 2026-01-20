@@ -115,11 +115,11 @@ export const CATEGORY_QUESTIONS: Record<string, string[]> = {
     'Quão satisfeito você está com o apoio que recebe dos seus familiares?'
   ],
   'Amor & Romance': [
-    'De 1 a 10, quão realizado você se sente em sua vida afetiva/romântica?',
-    'Qual nota você dá para o nível de cumplicidade e respeito na relação?',
-    'O quanto você se sente amado e desejado pelo seu parceiro(a)?',
-    'Como você avalia a qualidade da comunicação e intimidade entre vocês?',
-    'De 1 a 10, quão satisfeito você está com o tempo dedicado ao romance?'
+    'De 1 a 10, quão satisfeito(a) você está com sua vida amorosa atualmente?',
+    'De 1 a 10, o quanto suas experiências afetivas refletem respeito mútuo e alinhamento de valores?',
+    'De 1 a 10, o quanto você se sente desejado(a), valorizado(a) e emocionalmente reconhecido(a) nas suas conexões afetivas?',
+    'De 1 a 10, como você avalia a qualidade da comunicação e da intimidade emocional nas suas relações afetivas?',
+    'De 1 a 10, o quanto sua vida hoje abre espaço para afeto, presença e envolvimento romântico?'
   ],
   'Vida Social & Amizades': [
     'Qual nota você dá para o nível de confiança que tem em seus amigos?',
