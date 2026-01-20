@@ -128,7 +128,7 @@ export const Auth: React.FC = () => {
           </form>
         )}
 
-        <div className="mt-8 pt-6 border-t border-[#3d352d] flex flex-col items-center gap-6">
+        <div className="mt-8 pt-6 border-t border-[#3d352d] flex flex-col items-center gap-4">
           <button 
             disabled={!isConfigured}
             onClick={() => { setIsSignUp(!isSignUp); setMessage(null); }}
@@ -137,27 +137,9 @@ export const Auth: React.FC = () => {
             {isSignUp ? 'Já tem conta? Fazer Login' : 'Novo por aqui? Criar Cadastro'}
           </button>
           
-          <div className="bg-[#1a1612] border border-[#3d352d] p-4 rounded-sm w-full">
-            <div className="flex items-center gap-2 mb-2 text-amber-500">
-              <Info size={14} />
-              <p className="text-[10px] font-dst uppercase font-bold">Instrução para o Admin:</p>
-            </div>
-            <p className="text-[9px] text-[#f5e6d3]/40 leading-relaxed uppercase">
-              Para logar sem e-mail, no Supabase vá em:<br/>
-              <span className="text-[#f5e6d3]/80">Authentication &gt; Providers &gt; Email</span><br/>
-              e desligue a chave <span className="text-white italic">"Confirm email"</span>.<br/>
-              <span className="text-red-500/60 mt-1 block">(Você está no menu "Email Templates", mude para a aba "Providers")</span>
-            </p>
-          </div>
-
-          <a 
-            href="https://supabase.com/dashboard/project/_/auth/providers" 
-            target="_blank" 
-            rel="noopener noreferrer"
-            className="flex items-center gap-2 text-[8px] text-[#f5e6d3]/30 uppercase tracking-[0.2em] hover:text-amber-500 transition-colors"
-          >
-            Abrir Página de Providers <ExternalLink size={10} />
-          </a>
+          <p className="text-[8px] text-[#f5e6d3]/20 uppercase tracking-[0.2em] mt-2">
+            Constant Discovery © 2026
+          </p>
         </div>
       </div>
     </div>
