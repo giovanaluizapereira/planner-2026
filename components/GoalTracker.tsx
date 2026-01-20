@@ -7,7 +7,7 @@ import {
   Calendar as CalendarIcon, CheckCircle2, Circle, 
   Skull, ArrowUpRight, BookOpen, Users, Hammer,
   Info, Sparkles, MessageSquare, GraduationCap,
-  Clock, CheckCircle, HelpCircle
+  Clock, CheckCircle, HelpCircle, Minimize2, Maximize2
 } from 'lucide-react';
 
 interface GoalTrackerProps {
@@ -61,7 +61,6 @@ const CustomDatePicker: React.FC<{
       </div>
       {isOpen && (
         <div className="absolute bottom-full mb-2 left-0 bg-[#f5e6d3] rounded-[4px] shadow-2xl border-4 border-[#3d352d] z-[100] p-4 w-72">
-          {/* Header */}
           <div className="flex justify-between items-center mb-4">
             <h5 className="font-dst font-bold text-[#1a1612] capitalize text-base">
               {!isNaN(viewDate.getTime()) ? months[viewDate.getMonth()] : 'Mês'} {!isNaN(viewDate.getTime()) ? viewDate.getFullYear() : '2026'}
@@ -71,23 +70,16 @@ const CustomDatePicker: React.FC<{
               <button onClick={() => setViewDate(new Date(viewDate.getFullYear(), viewDate.getMonth() + 1))} className="p-1 hover:bg-[#3d352d]/10 rounded text-[#3d352d]"><ChevronUp className="rotate-90" size={18} /></button>
             </div>
           </div>
-
-          {/* Weekday labels */}
           <div className="grid grid-cols-7 mb-2">
             {weekDays.map(d => (
               <div key={d} className="text-center text-[10px] font-dst font-black text-[#3d352d]/40 uppercase">{d}</div>
             ))}
           </div>
-
-          {/* Days grid */}
           <div className="grid grid-cols-7 gap-1">
-            {/* Empty slots for previous month days */}
             {[...Array(firstDayOfMonth)].map((_, i) => <div key={`empty-${i}`} />)}
-            
             {[...Array(daysInMonth)].map((_, i) => {
               const dayNum = i + 1;
               const isSelected = value === `${viewDate.getFullYear()}-${String(viewDate.getMonth() + 1).padStart(2, '0')}-${String(dayNum).padStart(2, '0')}`;
-              
               return (
                 <button 
                   key={dayNum} 
@@ -110,7 +102,18 @@ const CustomDatePicker: React.FC<{
 };
 
 const GoalTracker: React.FC<GoalTrackerProps> = ({ categories, onUpdateGoals }) => {
-  const [expanded, setExpanded] = useState<string | null>(null);
+  const [expandedCategory, setExpandedCategory] = useState<string | null>(null);
+  const [collapsedStrategies, setCollapsedStrategies] = useState<Set<string>>(new Set());
+
+  const toggleStrategyCollapse = (id: string, e?: React.MouseEvent) => {
+    e?.stopPropagation();
+    setCollapsedStrategies(prev => {
+      const next = new Set(prev);
+      if (next.has(id)) next.delete(id);
+      else next.add(id);
+      return next;
+    });
+  };
 
   const addStrategy = (category: string) => {
     const cat = categories.find(c => c.category === category);
@@ -118,13 +121,15 @@ const GoalTracker: React.FC<GoalTrackerProps> = ({ categories, onUpdateGoals }) 
     const newStrategy: Goal = { 
       id: Math.random().toString(36).substr(2, 9), 
       intention: '', 
+      why: '',
       smartGoal: '', 
+      withWhom: '',
       successIndicator: '', 
       dueDate: '', 
       horizon: 'Médio',
-      practiceEvidences: [],
-      socialEvidences: [],
       conceptualEvidences: [],
+      socialEvidences: [],
+      practiceEvidences: [],
       completed: false 
     };
     onUpdateGoals(category, [...(cat.goals || []), newStrategy]);
@@ -140,7 +145,6 @@ const GoalTracker: React.FC<GoalTrackerProps> = ({ categories, onUpdateGoals }) 
     const cat = categories.find(c => c.category === category);
     const goal = (cat?.goals || []).find(g => g.id === goalId);
     if (!goal) return;
-
     const newEvidence: Evidence = { id: Math.random().toString(36).substr(2, 5), text: '', completed: false };
     const field = `${type}Evidences` as keyof Goal;
     updateStrategy(category, goalId, { [field]: [...((goal[field] as Evidence[]) || []), newEvidence] });
@@ -150,7 +154,6 @@ const GoalTracker: React.FC<GoalTrackerProps> = ({ categories, onUpdateGoals }) 
     const cat = categories.find(c => c.category === category);
     const goal = (cat?.goals || []).find(g => g.id === goalId);
     if (!goal) return;
-
     const field = `${type}Evidences` as keyof Goal;
     const newList = ((goal[field] as Evidence[]) || []).map(e => e.id === evidenceId ? { ...e, ...updates } : e);
     updateStrategy(category, goalId, { [field]: newList });
@@ -160,7 +163,6 @@ const GoalTracker: React.FC<GoalTrackerProps> = ({ categories, onUpdateGoals }) 
     const cat = categories.find(c => c.category === category);
     const goal = (cat?.goals || []).find(g => g.id === goalId);
     if (!goal) return;
-
     const field = `${type}Evidences` as keyof Goal;
     const newList = ((goal[field] as Evidence[]) || []).filter(e => e.id !== evidenceId);
     updateStrategy(category, goalId, { [field]: newList });
@@ -183,30 +185,30 @@ const GoalTracker: React.FC<GoalTrackerProps> = ({ categories, onUpdateGoals }) 
         </div>
         <div className="bg-[#1a1612] border-2 border-[#3d352d] p-4 flex gap-6">
            <div className="flex items-center gap-2">
-              <div className="w-3 h-3 bg-emerald-500 rounded-full" />
-              <span className="text-[9px] font-dst text-[#f5e6d3]/50 uppercase tracking-widest">Prática 70%</span>
+              <div className="w-3 h-3 bg-amber-500 rounded-full" />
+              <span className="text-[9px] font-dst text-[#f5e6d3]/50 uppercase tracking-widest">Estudo 10%</span>
            </div>
            <div className="flex items-center gap-2">
               <div className="w-3 h-3 bg-blue-500 rounded-full" />
               <span className="text-[9px] font-dst text-[#f5e6d3]/50 uppercase tracking-widest">Social 20%</span>
            </div>
            <div className="flex items-center gap-2">
-              <div className="w-3 h-3 bg-amber-500 rounded-full" />
-              <span className="text-[9px] font-dst text-[#f5e6d3]/50 uppercase tracking-widest">Estudo 10%</span>
+              <div className="w-3 h-3 bg-emerald-500 rounded-full" />
+              <span className="text-[9px] font-dst text-[#f5e6d3]/50 uppercase tracking-widest">Prática 70%</span>
            </div>
         </div>
       </div>
 
       <div className="flex flex-col gap-8">
         {(categories || []).map((cat) => {
-          const isExpanded = expanded === cat.category;
+          const isCatExpanded = expandedCategory === cat.category;
           const currentScore = cat.currentScore || cat.score;
           const goals = cat.goals || [];
           const totalProgress = goals.length > 0 ? Math.round((goals.filter(g => g.completed).length / goals.length) * 100) : 0;
 
           return (
-            <div key={cat.category} className={`bg-[#1a1612] border-4 border-[#3d352d] transition-all duration-300 relative shadow-2xl ${isExpanded ? 'scale-[1.01]' : 'hover:bg-[#25201b]'}`}>
-              <div className="p-8 cursor-pointer flex items-center gap-8" onClick={() => setExpanded(isExpanded ? null : cat.category)}>
+            <div key={cat.category} className={`bg-[#1a1612] border-4 border-[#3d352d] transition-all duration-300 relative shadow-2xl ${isCatExpanded ? 'scale-[1.01]' : 'hover:bg-[#25201b]'}`}>
+              <div className="p-8 cursor-pointer flex items-center gap-8" onClick={() => setExpandedCategory(isCatExpanded ? null : cat.category)}>
                 <div className="w-16 h-16 bg-[#f5e6d3] rounded-sm border-4 border-[#3d352d] flex items-center justify-center text-[#3d352d] shadow-lg rotate-[-3deg] relative">
                    {CATEGORY_ICONS[cat.category] || <Target size={28} />}
                    <div className="absolute -bottom-2 -right-2 bg-amber-600 text-white w-6 h-6 rounded-sm border-2 border-[#3d352d] flex items-center justify-center font-dst text-xs shadow-md">
@@ -222,10 +224,10 @@ const GoalTracker: React.FC<GoalTrackerProps> = ({ categories, onUpdateGoals }) 
                     <div className="h-full bg-amber-500 transition-all duration-1000" style={{ width: `${totalProgress}%` }} />
                   </div>
                 </div>
-                <div className="text-[#f5e6d3]">{isExpanded ? <ChevronUp size={28} /> : <ChevronDown size={28} />}</div>
+                <div className="text-[#f5e6d3]">{isCatExpanded ? <ChevronUp size={28} /> : <ChevronDown size={28} />}</div>
               </div>
 
-              {isExpanded && (
+              {isCatExpanded && (
                 <div className="px-8 pb-10 pt-4 space-y-10 animate-in slide-in-from-top-4">
                   {goals.length === 0 && (
                     <div className="text-center py-10 border-2 border-dashed border-[#3d352d] bg-[#3d352d]/10">
@@ -233,171 +235,201 @@ const GoalTracker: React.FC<GoalTrackerProps> = ({ categories, onUpdateGoals }) 
                     </div>
                   )}
 
-                  <div className="space-y-12">
-                    {goals.map(goal => (
-                      <div key={goal.id} className={`p-8 bg-[#f5e6d3] border-4 border-[#3d352d] relative shadow-xl transition-all ${goal.completed ? 'opacity-60 grayscale-[0.5]' : ''}`}>
-                        
-                        <div className="flex justify-between items-start mb-8 border-b-2 border-[#3d352d]/10 pb-4">
-                          <div className="flex-1">
-                            <label className="text-[10px] font-dst text-amber-700 uppercase font-black tracking-widest mb-1 block">Intenção de Desenvolvimento</label>
-                            <input 
-                              className="w-full bg-transparent border-none p-0 font-dst text-2xl text-[#1a1612] outline-none placeholder:text-[#3d352d]/20" 
-                              placeholder="EX: Fortalecer resiliência emocional..." 
-                              value={goal.intention} 
-                              onChange={(e) => updateStrategy(cat.category, goal.id, { intention: e.target.value })} 
-                            />
-                          </div>
-                          <button onClick={() => removeStrategy(cat.category, goal.id)} className="p-2 text-[#3d352d]/40 hover:text-red-600 transition-colors"><Trash2 size={18} /></button>
-                        </div>
-
-                        <div className="grid grid-cols-1 md:grid-cols-3 gap-8 mb-10">
-                          <div className="space-y-2 md:col-span-2">
-                            <label className="flex items-center gap-2 font-dst text-[10px] text-[#3d352d] uppercase tracking-widest font-bold">
-                              <Target size={12} className="text-amber-600" /> Meta SMART (Resultado Esperado)
-                            </label>
-                            <textarea 
-                              className="w-full bg-white/50 border-2 border-[#3d352d] px-4 py-3 text-sm font-bold text-[#1a1612] min-h-[80px] outline-none focus:bg-white transition-colors"
-                              placeholder="O que especificamente será alcançado? Como?"
-                              value={goal.smartGoal}
-                              onChange={(e) => updateStrategy(cat.category, goal.id, { smartGoal: e.target.value })}
-                            />
-                          </div>
-                          <div className="space-y-4">
-                            <div className="space-y-2">
-                              <label className="flex items-center gap-2 font-dst text-[10px] text-[#3d352d] uppercase tracking-widest font-bold">
-                                <Clock size={12} className="text-amber-600" /> Horizonte
-                              </label>
-                              <select 
-                                className="w-full bg-white border-2 border-[#3d352d] px-4 py-3 text-xs font-bold text-[#1a1612] outline-none appearance-none"
-                                value={goal.horizon}
-                                onChange={(e) => updateStrategy(cat.category, goal.id, { horizon: e.target.value as any })}
-                              >
-                                <option>Curto</option>
-                                <option>Médio</option>
-                                <option>Longo</option>
-                              </select>
-                            </div>
-                            <div className="space-y-2">
-                              <label className="font-dst text-[10px] text-[#3d352d] uppercase tracking-widest font-bold">Prazo Estimado</label>
-                              <CustomDatePicker value={goal.dueDate} onChange={(d) => updateStrategy(cat.category, goal.id, { dueDate: d })} />
-                            </div>
-                          </div>
-                        </div>
-
-                        <div className="mb-10 space-y-2">
-                           <label className="flex items-center gap-2 font-dst text-[10px] text-[#3d352d] uppercase tracking-widest font-bold">
-                             <CheckCircle size={12} className="text-emerald-600" /> Indicador de Sucesso
-                           </label>
-                           <input 
-                              className="w-full bg-white/50 border-2 border-[#3d352d] px-4 py-3 text-sm font-bold text-[#1a1612] outline-none focus:bg-white"
-                              placeholder="Como você saberá que essa estratégia funcionou?"
-                              value={goal.successIndicator}
-                              onChange={(e) => updateStrategy(cat.category, goal.id, { successIndicator: e.target.value })}
-                           />
-                        </div>
-
-                        <div className="space-y-6 bg-[#3d352d]/5 p-6 border-2 border-[#3d352d]/10">
-                          <div className="flex items-center gap-2 mb-2">
-                             <HelpCircle size={14} className="text-amber-700" />
-                             <h5 className="font-dst text-xs text-[#3d352d] uppercase font-black">Evidências de Aprendizado (70/20/10)</h5>
-                          </div>
-
-                          <div className="space-y-3">
-                             <div className="flex justify-between items-center">
-                                <span className="text-[10px] font-dst text-emerald-700 uppercase font-bold flex items-center gap-2"><Hammer size={12}/> Prática e Aplicação (70%)</span>
-                                <button onClick={() => addEvidence(cat.category, goal.id, 'practice')} className="text-[9px] font-dst uppercase text-emerald-700 hover:underline">+ Adicionar Teste Prático</button>
-                             </div>
-                             <div className="space-y-2">
-                                {(goal.practiceEvidences || []).map(ev => (
-                                  <div key={ev.id} className="flex gap-4 items-center group/ev">
-                                     <button onClick={() => updateEvidence(cat.category, goal.id, 'practice', ev.id, { completed: !ev.completed })} className={`w-6 h-6 border-2 border-[#3d352d] flex items-center justify-center flex-shrink-0 ${ev.completed ? 'bg-emerald-600' : 'bg-white'}`}>
-                                        {ev.completed && <CheckCircle2 size={14} className="text-white" />}
-                                     </button>
-                                     <input 
-                                        className="flex-1 bg-transparent border-b border-[#3d352d]/20 text-xs font-bold text-[#1a1612] outline-none" 
-                                        placeholder="Aplicação real ou teste no dia a dia..."
-                                        value={ev.text}
-                                        onChange={(e) => updateEvidence(cat.category, goal.id, 'practice', ev.id, { text: e.target.value })}
-                                     />
-                                     <button 
-                                        onClick={() => removeEvidence(cat.category, goal.id, 'practice', ev.id)} 
-                                        className="opacity-0 group-hover/ev:opacity-100 p-1 text-[#3d352d]/30 hover:text-red-600 transition-all"
-                                     >
-                                        <Trash2 size={14} />
-                                     </button>
-                                  </div>
-                                ))}
-                             </div>
-                          </div>
-
-                          <div className="space-y-3">
-                             <div className="flex justify-between items-center">
-                                <span className="text-[10px] font-dst text-blue-700 uppercase font-bold flex items-center gap-2"><MessageSquare size={12}/> Troca e Social (20%)</span>
-                                <button onClick={() => addEvidence(cat.category, goal.id, 'social')} className="text-[9px] font-dst uppercase text-blue-700 hover:underline">+ Adicionar Interação</button>
-                             </div>
-                             <div className="space-y-2">
-                                {(goal.socialEvidences || []).map(ev => (
-                                  <div key={ev.id} className="flex gap-4 items-center group/ev">
-                                     <button onClick={() => updateEvidence(cat.category, goal.id, 'social', ev.id, { completed: !ev.completed })} className={`w-6 h-6 border-2 border-[#3d352d] flex items-center justify-center flex-shrink-0 ${ev.completed ? 'bg-blue-600' : 'bg-white'}`}>
-                                        {ev.completed && <CheckCircle2 size={14} className="text-white" />}
-                                     </button>
-                                     <input 
-                                        className="flex-1 bg-transparent border-b border-[#3d352d]/20 text-xs font-bold text-[#1a1612] outline-none" 
-                                        placeholder="Feedback, mentoria ou troca com outros..."
-                                        value={ev.text}
-                                        onChange={(e) => updateEvidence(cat.category, goal.id, 'social', ev.id, { text: e.target.value })}
-                                     />
-                                     <button 
-                                        onClick={() => removeEvidence(cat.category, goal.id, 'social', ev.id)} 
-                                        className="opacity-0 group-hover/ev:opacity-100 p-1 text-[#3d352d]/30 hover:text-red-600 transition-all"
-                                     >
-                                        <Trash2 size={14} />
-                                     </button>
-                                  </div>
-                                ))}
-                             </div>
-                          </div>
-
-                          <div className="space-y-3">
-                             <div className="flex justify-between items-center">
-                                <span className="text-[10px] font-dst text-amber-700 uppercase font-bold flex items-center gap-2"><GraduationCap size={12}/> Estudo e Conceito (10%)</span>
-                                <button onClick={() => addEvidence(cat.category, goal.id, 'conceptual')} className="text-[9px] font-dst uppercase text-amber-700 hover:underline">+ Adicionar Estudo</button>
-                             </div>
-                             <div className="space-y-2">
-                                {(goal.conceptualEvidences || []).map(ev => (
-                                  <div key={ev.id} className="flex gap-4 items-center group/ev">
-                                     <button onClick={() => updateEvidence(cat.category, goal.id, 'conceptual', ev.id, { completed: !ev.completed })} className={`w-6 h-6 border-2 border-[#3d352d] flex items-center justify-center flex-shrink-0 ${ev.completed ? 'bg-amber-600' : 'bg-white'}`}>
-                                        {ev.completed && <CheckCircle2 size={14} className="text-white" />}
-                                     </button>
-                                     <input 
-                                        className="flex-1 bg-transparent border-b border-[#3d352d]/20 text-xs font-bold text-[#1a1612] outline-none" 
-                                        placeholder="Leitura, curso ou palestra de apoio..."
-                                        value={ev.text}
-                                        onChange={(e) => updateEvidence(cat.category, goal.id, 'conceptual', ev.id, { text: e.target.value })}
-                                     />
-                                     <button 
-                                        onClick={() => removeEvidence(cat.category, goal.id, 'conceptual', ev.id)} 
-                                        className="opacity-0 group-hover/ev:opacity-100 p-1 text-[#3d352d]/30 hover:text-red-600 transition-all"
-                                     >
-                                        <Trash2 size={14} />
-                                     </button>
-                                  </div>
-                                ))}
-                             </div>
-                          </div>
-                        </div>
-
-                        <div className="mt-8 pt-6 border-t border-[#3d352d]/10 flex justify-end">
-                          <button 
-                            onClick={() => updateStrategy(cat.category, goal.id, { completed: !goal.completed })}
-                            className={`px-6 py-3 font-dst text-xs uppercase tracking-widest border-2 border-[#3d352d] transition-all flex items-center gap-2 ${goal.completed ? 'bg-[#3d352d] text-white' : 'bg-white text-[#1a1612] hover:bg-emerald-50'}`}
+                  <div className="space-y-6">
+                    {goals.map(goal => {
+                      const isStrategyCollapsed = collapsedStrategies.has(goal.id);
+                      
+                      return (
+                        <div key={goal.id} className={`bg-[#f5e6d3] border-4 border-[#3d352d] relative shadow-xl transition-all ${goal.completed ? 'opacity-60 grayscale-[0.5]' : ''}`}>
+                          
+                          {/* Header da Estratégia (Visível mesmo minimizada) */}
+                          <div 
+                            className={`p-6 flex items-center justify-between cursor-pointer transition-colors ${isStrategyCollapsed ? 'bg-[#3d352d]/5' : 'border-b-2 border-[#3d352d]/10'}`}
+                            onClick={() => toggleStrategyCollapse(goal.id)}
                           >
-                             {goal.completed ? 'Estratégia Masterizada' : 'Marcar como Concluído'}
-                             {goal.completed && <Skull size={14} className="text-amber-500" />}
-                          </button>
+                            <div className="flex-1">
+                              <label className="text-[9px] font-dst text-amber-700 uppercase font-black tracking-widest mb-1 block">O Quê? (Intenção de Evolução)</label>
+                              <div className="flex items-center gap-4">
+                                <input 
+                                  className="w-full bg-transparent border-none p-0 font-dst text-xl text-[#1a1612] outline-none placeholder:text-[#3d352d]/20" 
+                                  placeholder="EX: Melhorar minha oratória para apresentações..." 
+                                  value={goal.intention} 
+                                  onClick={(e) => e.stopPropagation()}
+                                  onChange={(e) => updateStrategy(cat.category, goal.id, { intention: e.target.value })} 
+                                />
+                                {goal.completed && <Skull size={18} className="text-amber-600 flex-shrink-0" />}
+                              </div>
+                            </div>
+                            <div className="flex items-center gap-2">
+                              <button onClick={(e) => { e.stopPropagation(); removeStrategy(cat.category, goal.id); }} className="p-2 text-[#3d352d]/30 hover:text-red-600 transition-colors"><Trash2 size={16} /></button>
+                              <div className="text-[#3d352d]/40 p-1">
+                                {isStrategyCollapsed ? <Maximize2 size={16} /> : <Minimize2 size={16} />}
+                              </div>
+                            </div>
+                          </div>
+
+                          {/* Corpo da Estratégia (Minimizável) */}
+                          {!isStrategyCollapsed && (
+                            <div className="p-8 space-y-8 animate-in slide-in-from-top-2 duration-200">
+                              <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+                                <div className="space-y-2">
+                                  <label className="flex items-center gap-2 font-dst text-[10px] text-[#3d352d] uppercase tracking-widest font-bold">
+                                    <Sparkles size={12} className="text-amber-600" /> Por Quê? (Por que isso importa?)
+                                  </label>
+                                  <textarea 
+                                    className="w-full bg-white/50 border-2 border-[#3d352d] px-4 py-3 text-sm font-bold text-[#1a1612] min-h-[80px] outline-none focus:bg-white transition-colors"
+                                    placeholder="Qual o ganho emocional ou prático de desenvolver isso hoje?"
+                                    value={goal.why}
+                                    onChange={(e) => updateStrategy(cat.category, goal.id, { why: e.target.value })}
+                                  />
+                                </div>
+                                <div className="space-y-2">
+                                  <label className="flex items-center gap-2 font-dst text-[10px] text-[#3d352d] uppercase tracking-widest font-bold">
+                                    <Users size={12} className="text-amber-600" /> Com Quem? (Quem pode apoiar?)
+                                  </label>
+                                  <textarea 
+                                    className="w-full bg-white/50 border-2 border-[#3d352d] px-4 py-3 text-sm font-bold text-[#1a1612] min-h-[80px] outline-none focus:bg-white transition-colors"
+                                    placeholder="Amigos, mentores, ou só você mesmo?"
+                                    value={goal.withWhom}
+                                    onChange={(e) => updateStrategy(cat.category, goal.id, { withWhom: e.target.value })}
+                                  />
+                                </div>
+                              </div>
+
+                              <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
+                                <div className="space-y-2 md:col-span-2">
+                                  <label className="flex items-center gap-2 font-dst text-[10px] text-[#3d352d] uppercase tracking-widest font-bold">
+                                    <Target size={12} className="text-emerald-600" /> Como? (Plano Simples de Ação)
+                                  </label>
+                                  <textarea 
+                                    className="w-full bg-white/50 border-2 border-[#3d352d] px-4 py-3 text-sm font-bold text-[#1a1612] min-h-[80px] outline-none focus:bg-white transition-colors"
+                                    placeholder="O que especificamente você vai fazer? Como?"
+                                    value={goal.smartGoal}
+                                    onChange={(e) => updateStrategy(cat.category, goal.id, { smartGoal: e.target.value })}
+                                  />
+                                </div>
+                                <div className="space-y-4">
+                                  <div className="space-y-2">
+                                    <label className="flex items-center gap-2 font-dst text-[10px] text-[#3d352d] uppercase tracking-widest font-bold">
+                                      <Clock size={12} className="text-amber-600" /> Quando? (Horizonte)
+                                    </label>
+                                    <select 
+                                      className="w-full bg-white border-2 border-[#3d352d] px-4 py-3 text-xs font-bold text-[#1a1612] outline-none appearance-none"
+                                      value={goal.horizon}
+                                      onChange={(e) => updateStrategy(cat.category, goal.id, { horizon: e.target.value as any })}
+                                    >
+                                      <option>Curto (Semanas)</option>
+                                      <option>Médio (Meses)</option>
+                                      <option>Longo (Semestre/Ano)</option>
+                                    </select>
+                                  </div>
+                                  <div className="space-y-2">
+                                    <label className="font-dst text-[10px] text-[#3d352d] uppercase tracking-widest font-bold">Prazo Estimado</label>
+                                    <CustomDatePicker value={goal.dueDate} onChange={(d) => updateStrategy(cat.category, goal.id, { dueDate: d })} />
+                                  </div>
+                                </div>
+                              </div>
+
+                              {/* Seção 10/20/70 */}
+                              <div className="space-y-6 bg-[#3d352d]/5 p-6 border-2 border-[#3d352d]/10">
+                                <div className="flex items-center gap-2 mb-2">
+                                   <HelpCircle size={14} className="text-amber-700" />
+                                   <h5 className="font-dst text-xs text-[#3d352d] uppercase font-black">Pequenos Experimentos (Como avançar?)</h5>
+                                </div>
+
+                                {/* 10% Estudo - Ordem Reorganizada */}
+                                <div className="space-y-3">
+                                   <div className="flex justify-between items-center">
+                                      <span className="text-[10px] font-dst text-amber-700 uppercase font-bold flex items-center gap-2"><GraduationCap size={12}/> Estudo e Conceito (10%)</span>
+                                      <button onClick={() => addEvidence(cat.category, goal.id, 'conceptual')} className="text-[9px] font-dst uppercase text-amber-700 hover:underline">+ Adicionar Estudo</button>
+                                   </div>
+                                   <div className="space-y-2">
+                                      {(goal.conceptualEvidences || []).map(ev => (
+                                        <div key={ev.id} className="flex gap-4 items-center group/ev">
+                                           <button onClick={() => updateEvidence(cat.category, goal.id, 'conceptual', ev.id, { completed: !ev.completed })} className={`w-6 h-6 border-2 border-[#3d352d] flex items-center justify-center flex-shrink-0 ${ev.completed ? 'bg-amber-600' : 'bg-white'}`}>
+                                              {ev.completed && <CheckCircle2 size={14} className="text-white" />}
+                                           </button>
+                                           <input 
+                                              className="flex-1 bg-transparent border-b border-[#3d352d]/20 text-xs font-bold text-[#1a1612] outline-none" 
+                                              placeholder="Leitura rápida, curso ou aula..."
+                                              value={ev.text}
+                                              onChange={(e) => updateEvidence(cat.category, goal.id, 'conceptual', ev.id, { text: e.target.value })}
+                                           />
+                                           <button onClick={() => removeEvidence(cat.category, goal.id, 'conceptual', ev.id)} className="opacity-0 group-hover/ev:opacity-100 p-1 text-[#3d352d]/30 hover:text-red-600"><Trash2 size={14} /></button>
+                                        </div>
+                                      ))}
+                                   </div>
+                                </div>
+
+                                {/* 20% Social */}
+                                <div className="space-y-3">
+                                   <div className="flex justify-between items-center">
+                                      <span className="text-[10px] font-dst text-blue-700 uppercase font-bold flex items-center gap-2"><MessageSquare size={12}/> Troca e Social (20%)</span>
+                                      <button onClick={() => addEvidence(cat.category, goal.id, 'social')} className="text-[9px] font-dst uppercase text-blue-700 hover:underline">+ Adicionar Interação</button>
+                                   </div>
+                                   <div className="space-y-2">
+                                      {(goal.socialEvidences || []).map(ev => (
+                                        <div key={ev.id} className="flex gap-4 items-center group/ev">
+                                           <button onClick={() => updateEvidence(cat.category, goal.id, 'social', ev.id, { completed: !ev.completed })} className={`w-6 h-6 border-2 border-[#3d352d] flex items-center justify-center flex-shrink-0 ${ev.completed ? 'bg-blue-600' : 'bg-white'}`}>
+                                              {ev.completed && <CheckCircle2 size={14} className="text-white" />}
+                                           </button>
+                                           <input 
+                                              className="flex-1 bg-transparent border-b border-[#3d352d]/20 text-xs font-bold text-[#1a1612] outline-none" 
+                                              placeholder="Conversar com alguém, pedir feedback..."
+                                              value={ev.text}
+                                              onChange={(e) => updateEvidence(cat.category, goal.id, 'social', ev.id, { text: e.target.value })}
+                                           />
+                                           <button onClick={() => removeEvidence(cat.category, goal.id, 'social', ev.id)} className="opacity-0 group-hover/ev:opacity-100 p-1 text-[#3d352d]/30 hover:text-red-600"><Trash2 size={14} /></button>
+                                        </div>
+                                      ))}
+                                   </div>
+                                </div>
+
+                                {/* 70% Prática */}
+                                <div className="space-y-3">
+                                   <div className="flex justify-between items-center">
+                                      <span className="text-[10px] font-dst text-emerald-700 uppercase font-bold flex items-center gap-2"><Hammer size={12}/> Prática e Aplicação (70%)</span>
+                                      <button onClick={() => addEvidence(cat.category, goal.id, 'practice')} className="text-[9px] font-dst uppercase text-emerald-700 hover:underline">+ Adicionar Prática</button>
+                                   </div>
+                                   <div className="space-y-2">
+                                      {(goal.practiceEvidences || []).map(ev => (
+                                        <div key={ev.id} className="flex gap-4 items-center group/ev">
+                                           <button onClick={() => updateEvidence(cat.category, goal.id, 'practice', ev.id, { completed: !ev.completed })} className={`w-6 h-6 border-2 border-[#3d352d] flex items-center justify-center flex-shrink-0 ${ev.completed ? 'bg-emerald-600' : 'bg-white'}`}>
+                                              {ev.completed && <CheckCircle2 size={14} className="text-white" />}
+                                           </button>
+                                           <input 
+                                              className="flex-1 bg-transparent border-b border-[#3d352d]/20 text-xs font-bold text-[#1a1612] outline-none" 
+                                              placeholder="Testar no dia a dia, aplicar o conceito..."
+                                              value={ev.text}
+                                              onChange={(e) => updateEvidence(cat.category, goal.id, 'practice', ev.id, { text: e.target.value })}
+                                           />
+                                           <button onClick={() => removeEvidence(cat.category, goal.id, 'practice', ev.id)} className="opacity-0 group-hover/ev:opacity-100 p-1 text-[#3d352d]/30 hover:text-red-600"><Trash2 size={14} /></button>
+                                        </div>
+                                      ))}
+                                   </div>
+                                </div>
+                              </div>
+
+                              <div className="flex justify-between items-center pt-6 border-t border-[#3d352d]/10">
+                                <button 
+                                  onClick={() => toggleStrategyCollapse(goal.id)}
+                                  className="text-[10px] font-dst uppercase tracking-widest text-[#3d352d]/50 hover:text-[#3d352d] flex items-center gap-2"
+                                >
+                                  <Minimize2 size={12} /> Recolher Estratégia
+                                </button>
+                                <button 
+                                  onClick={() => updateStrategy(cat.category, goal.id, { completed: !goal.completed })}
+                                  className={`px-6 py-3 font-dst text-xs uppercase tracking-widest border-2 border-[#3d352d] transition-all flex items-center gap-2 ${goal.completed ? 'bg-[#3d352d] text-white' : 'bg-white text-[#1a1612] hover:bg-emerald-50'}`}
+                                >
+                                   {goal.completed ? 'Estratégia Masterizada' : 'Concluir Plano de Ação'}
+                                   {goal.completed && <Skull size={14} className="text-amber-500" />}
+                                </button>
+                              </div>
+                            </div>
+                          )}
                         </div>
-                      </div>
-                    ))}
+                      );
+                    })}
                   </div>
 
                   <button 
