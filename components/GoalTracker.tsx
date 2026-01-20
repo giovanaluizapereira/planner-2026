@@ -128,6 +128,16 @@ const GoalTracker: React.FC<GoalTrackerProps> = ({ categories, onUpdateGoals }) 
     updateStrategy(category, goalId, { [field]: newList });
   };
 
+  const removeEvidence = (category: string, goalId: string, type: 'practice' | 'social' | 'conceptual', evidenceId: string) => {
+    const cat = categories.find(c => c.category === category);
+    const goal = (cat?.goals || []).find(g => g.id === goalId);
+    if (!goal) return;
+
+    const field = `${type}Evidences` as keyof Goal;
+    const newList = ((goal[field] as Evidence[]) || []).filter(e => e.id !== evidenceId);
+    updateStrategy(category, goalId, { [field]: newList });
+  };
+
   const removeStrategy = (category: string, goalId: string) => {
     const cat = categories.find(c => c.category === category);
     if (!cat) return;
@@ -271,7 +281,7 @@ const GoalTracker: React.FC<GoalTrackerProps> = ({ categories, onUpdateGoals }) 
                              </div>
                              <div className="space-y-2">
                                 {(goal.practiceEvidences || []).map(ev => (
-                                  <div key={ev.id} className="flex gap-2">
+                                  <div key={ev.id} className="flex gap-4 items-center group/ev">
                                      <button onClick={() => updateEvidence(cat.category, goal.id, 'practice', ev.id, { completed: !ev.completed })} className={`w-6 h-6 border-2 border-[#3d352d] flex items-center justify-center flex-shrink-0 ${ev.completed ? 'bg-emerald-600' : 'bg-white'}`}>
                                         {ev.completed && <CheckCircle2 size={14} className="text-white" />}
                                      </button>
@@ -281,6 +291,12 @@ const GoalTracker: React.FC<GoalTrackerProps> = ({ categories, onUpdateGoals }) 
                                         value={ev.text}
                                         onChange={(e) => updateEvidence(cat.category, goal.id, 'practice', ev.id, { text: e.target.value })}
                                      />
+                                     <button 
+                                        onClick={() => removeEvidence(cat.category, goal.id, 'practice', ev.id)} 
+                                        className="opacity-0 group-hover/ev:opacity-100 p-1 text-[#3d352d]/30 hover:text-red-600 transition-all"
+                                     >
+                                        <Trash2 size={14} />
+                                     </button>
                                   </div>
                                 ))}
                              </div>
@@ -293,7 +309,7 @@ const GoalTracker: React.FC<GoalTrackerProps> = ({ categories, onUpdateGoals }) 
                              </div>
                              <div className="space-y-2">
                                 {(goal.socialEvidences || []).map(ev => (
-                                  <div key={ev.id} className="flex gap-2">
+                                  <div key={ev.id} className="flex gap-4 items-center group/ev">
                                      <button onClick={() => updateEvidence(cat.category, goal.id, 'social', ev.id, { completed: !ev.completed })} className={`w-6 h-6 border-2 border-[#3d352d] flex items-center justify-center flex-shrink-0 ${ev.completed ? 'bg-blue-600' : 'bg-white'}`}>
                                         {ev.completed && <CheckCircle2 size={14} className="text-white" />}
                                      </button>
@@ -303,6 +319,12 @@ const GoalTracker: React.FC<GoalTrackerProps> = ({ categories, onUpdateGoals }) 
                                         value={ev.text}
                                         onChange={(e) => updateEvidence(cat.category, goal.id, 'social', ev.id, { text: e.target.value })}
                                      />
+                                     <button 
+                                        onClick={() => removeEvidence(cat.category, goal.id, 'social', ev.id)} 
+                                        className="opacity-0 group-hover/ev:opacity-100 p-1 text-[#3d352d]/30 hover:text-red-600 transition-all"
+                                     >
+                                        <Trash2 size={14} />
+                                     </button>
                                   </div>
                                 ))}
                              </div>
@@ -315,7 +337,7 @@ const GoalTracker: React.FC<GoalTrackerProps> = ({ categories, onUpdateGoals }) 
                              </div>
                              <div className="space-y-2">
                                 {(goal.conceptualEvidences || []).map(ev => (
-                                  <div key={ev.id} className="flex gap-2">
+                                  <div key={ev.id} className="flex gap-4 items-center group/ev">
                                      <button onClick={() => updateEvidence(cat.category, goal.id, 'conceptual', ev.id, { completed: !ev.completed })} className={`w-6 h-6 border-2 border-[#3d352d] flex items-center justify-center flex-shrink-0 ${ev.completed ? 'bg-amber-600' : 'bg-white'}`}>
                                         {ev.completed && <CheckCircle2 size={14} className="text-white" />}
                                      </button>
@@ -325,6 +347,12 @@ const GoalTracker: React.FC<GoalTrackerProps> = ({ categories, onUpdateGoals }) 
                                         value={ev.text}
                                         onChange={(e) => updateEvidence(cat.category, goal.id, 'conceptual', ev.id, { text: e.target.value })}
                                      />
+                                     <button 
+                                        onClick={() => removeEvidence(cat.category, goal.id, 'conceptual', ev.id)} 
+                                        className="opacity-0 group-hover/ev:opacity-100 p-1 text-[#3d352d]/30 hover:text-red-600 transition-all"
+                                     >
+                                        <Trash2 size={14} />
+                                     </button>
                                   </div>
                                 ))}
                              </div>
