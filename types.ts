@@ -7,18 +7,20 @@ export interface Evidence {
 
 export interface Goal {
   id: string;
-  intention: string;       // Intenção de desenvolvimento (O que quer desenvolver)
-  smartGoal: string;       // Definição SMART (Específica, Mensurável...)
-  successIndicator: string; // Como saberá que funcionou
-  dueDate: string;
-  horizon: 'Curto' | 'Médio' | 'Longo';
+  intention: string;       // O quê? (Intenção/Habilidade)
+  why: string;             // Por quê? (Sentido/Importância)
+  smartGoal: string;       // Como? (O plano de ação geral)
+  withWhom: string;        // Com quem? (Apoio/Envolvidos)
+  successIndicator: string; // Como saberei que funcionou?
+  dueDate: string;         // Quando? (Data)
+  horizon: 'Curto' | 'Médio' | 'Longo'; // Quando? (Horizonte)
   
-  // Estrutura 70/20/10
-  practiceEvidences: Evidence[];   // 70% - Aplicação real
-  socialEvidences: Evidence[];     // 20% - Feedbacks/Trocas
+  // Estrutura 10/20/70
   conceptualEvidences: Evidence[]; // 10% - Teoria/Cursos
+  socialEvidences: Evidence[];     // 20% - Feedbacks/Trocas
+  practiceEvidences: Evidence[];   // 70% - Aplicação real
   
-  completed: boolean; // Status mestre da estratégia
+  completed: boolean;
 }
 
 export interface WheelData {
