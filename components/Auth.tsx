@@ -13,11 +13,10 @@ export const Auth: React.FC = () => {
   const handleAuth = async (e: React.FormEvent) => {
     e.preventDefault();
     
-    // Verificação em tempo de execução
     if (!supabase) {
       setMessage({ 
         type: 'error', 
-        text: 'Erro: O Supabase não foi configurado corretamente na Vercel (SUPABASE_URL / SUPABASE_ANON_KEY ausentes).' 
+        text: 'Erro de Configuração: As variáveis SUPABASE_URL e SUPABASE_ANON_KEY não foram detectadas. Verifique as configurações na Vercel.' 
       });
       return;
     }
@@ -33,7 +32,7 @@ export const Auth: React.FC = () => {
       if (error) throw error;
       
       if (isSignUp) {
-        setMessage({ type: 'success', text: 'Sucesso! Verifique seu e-mail para confirmar o cadastro.' });
+        setMessage({ type: 'success', text: 'Cadastro realizado! Verifique seu e-mail para confirmar.' });
       }
     } catch (error: any) {
       console.error("Erro de Autenticação:", error);
@@ -54,7 +53,7 @@ export const Auth: React.FC = () => {
           <div className="w-16 h-16 bg-amber-600 rounded-lg flex items-center justify-center border-2 border-[#f5e6d3] shadow-lg rotate-3 mb-4">
             <Skull size={32} className="text-[#1a1612]" />
           </div>
-          <h2 className="text-3xl font-dst text-[#f5e6d3] uppercase tracking-tighter">Survivor Login</h2>
+          <h2 className="text-3xl font-dst text-[#f5e6d3] uppercase tracking-tighter text-center">Survivor Login</h2>
           <p className="text-[10px] text-amber-500 uppercase tracking-[0.3em] font-black mt-1">Planner 2026</p>
         </div>
 
@@ -69,7 +68,7 @@ export const Auth: React.FC = () => {
               value={email}
               onChange={(e) => setEmail(e.target.value)}
               className="w-full bg-[#1a1612] border-2 border-[#3d352d] px-4 py-3 font-dst text-[#f5e6d3] outline-none focus:border-amber-600 transition-colors"
-              placeholder="giovanapereira@gmail.com"
+              placeholder="sobrevivente@exemplo.com"
             />
           </div>
 
