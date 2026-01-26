@@ -1,6 +1,6 @@
 
 import React, { useState, useCallback, useMemo, useEffect, useRef } from 'react';
-import { RefreshCw, Trophy, Loader2, Key, ExternalLink, LogOut, Upload, BrainCircuit } from 'lucide-react';
+import { Trophy, Loader2, LogOut, BrainCircuit, History, ShieldCheck } from 'lucide-react';
 import ManualEntry from './components/ManualEntry';
 import RankingChart from './components/RankingChart';
 import GoalTracker from './components/GoalTracker';
@@ -9,21 +9,19 @@ import LevelUpModal from './components/LevelUpModal';
 import { Auth } from './components/Auth';
 import { WheelData, Goal } from './types';
 import { supabase } from './lib/supabase';
-import { analyzeWheelImage } from './services/geminiService';
 
 const App: React.FC = () => {
   const [session, setSession] = useState<any>(null);
   const [baseData, setBaseData] = useState<WheelData[]>([]);
   const [isStarted, setIsStarted] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
-  const [isAnalyzing, setIsAnalyzing] = useState(false);
   const [lastSaved, setLastSaved] = useState<Date | null>(null);
   const [isLoadingSession, setIsLoadingSession] = useState(true);
   
   const [levelUpInfo, setLevelUpInfo] = useState<{ area: string, days: number, level: number } | null>(null);
-  const fileInputRef = useRef<HTMLInputElement>(null);
   const isInitialLoad = useRef(true);
-  const saveTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+  // Fix: Replaced NodeJS.Timeout with ReturnType<typeof setTimeout> to resolve the namespace error
+  const saveTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   const sanitizeData = (data: any[]): WheelData[] => {
     if (!Array.isArray(data)) return [];
@@ -45,7 +43,6 @@ const App: React.FC = () => {
     }));
   };
 
-  // Reseta o estado local quando o usuário muda para evitar vazamento de dados
   useEffect(() => {
     if (session?.user?.id) {
       setBaseData([]);
@@ -92,13 +89,11 @@ const App: React.FC = () => {
       setIsStarted(true);
       setLastSaved(new Date(latestRun.created_at));
     } else {
-      // Caso seja um novo usuário ou ocorra erro, garante que comece do zero
       setBaseData([]);
       setIsStarted(false);
       setLastSaved(null);
     }
     
-    // Pequeno delay para evitar que o save automático dispare antes do load completar
     setTimeout(() => { isInitialLoad.current = false; }, 800);
   }, [session?.user?.id]);
 
@@ -128,39 +123,17 @@ const App: React.FC = () => {
   }, [baseData]);
 
   useEffect(() => {
-    // Não salva se estiver no carregamento inicial ou se não houver dados
     if (isInitialLoad.current || !isStarted || !session || baseData.length === 0) return;
     
     if (saveTimeoutRef.current) clearTimeout(saveTimeoutRef.current);
     saveTimeoutRef.current = setTimeout(() => {
       saveToSupabase(baseData, currentTotalXP);
-    }, 3000); // Delay maior para evitar spam de inserts
+    }, 3000);
     
     return () => {
       if (saveTimeoutRef.current) clearTimeout(saveTimeoutRef.current);
     };
   }, [baseData, isStarted, session, currentTotalXP, saveToSupabase]);
-
-  const handleImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (!file) return;
-
-    setIsAnalyzing(true);
-    try {
-      const reader = new FileReader();
-      reader.onloadend = async () => {
-        const base64 = reader.result as string;
-        const results = await analyzeWheelImage(base64);
-        handleConfirmScores(results);
-        setIsAnalyzing(false);
-      };
-      reader.readAsDataURL(file);
-    } catch (error) {
-      console.error("Erro na análise:", error);
-      alert("Erro ao analisar imagem. Tente preenchimento manual.");
-      setIsAnalyzing(false);
-    }
-  };
 
   const handleConfirmScores = useCallback((results: { category: string; score: number }[]) => {
     const initialData = results.map(r => ({ ...r, goals: [] }));
@@ -192,16 +165,6 @@ const App: React.FC = () => {
     <div className="min-h-screen pb-20 overflow-x-hidden">
       {levelUpInfo && <LevelUpModal {...levelUpInfo} xp={500} onClose={() => setLevelUpInfo(null)} />}
       
-      {isAnalyzing && (
-        <div className="fixed inset-0 z-[300] bg-black/90 flex flex-col items-center justify-center p-6 text-center backdrop-blur-md">
-          <div className="w-32 h-32 bg-amber-600 rounded-full flex items-center justify-center mb-8 animate-pulse border-4 border-[#f5e6d3]">
-            <BrainCircuit size={64} className="text-[#1a1612] animate-bounce" />
-          </div>
-          <h2 className="text-4xl font-dst text-white mb-2 uppercase italic tracking-tighter">Processando Sinais...</h2>
-          <p className="text-amber-500 font-dst text-sm uppercase tracking-widest">A IA está decodificando sua Roda da Vida</p>
-        </div>
-      )}
-
       <nav className="bg-[#1a1612]/90 backdrop-blur-md sticky top-0 z-50 border-b border-[#3d352d] px-6 py-4 shadow-xl">
         <div className="max-w-7xl mx-auto flex justify-between items-center">
           <div className="flex items-center gap-4">
@@ -229,19 +192,15 @@ const App: React.FC = () => {
 
       <main className="max-w-7xl mx-auto px-6 pt-12">
         {!isStarted ? (
-          <section className="max-w-6xl mx-auto mt-12 mb-20 space-y-12">
+          <section className="max-w-6xl mx-auto mt-12 mb-20 space-y-12 animate-in fade-in duration-700">
             <div className="text-center space-y-4">
-              <h2 className="text-6xl font-dst text-[#f5e6d3] tracking-tighter uppercase italic">Diagnóstico Inicial</h2>
-              <div className="flex flex-col md:flex-row items-center justify-center gap-4 mt-8">
-                <button 
-                  onClick={() => fileInputRef.current?.click()}
-                  className="flex items-center gap-3 bg-amber-600 hover:bg-amber-500 text-[#1a1612] px-8 py-4 font-dst text-xl uppercase tracking-widest border-4 border-[#3d352d] shadow-lg transition-all"
-                >
-                  <Upload size={24} /> Escanear PNG/Foto
-                </button>
-                <input type="file" ref={fileInputRef} onChange={handleImageUpload} accept="image/*" className="hidden" />
-                <span className="font-dst text-[#f5e6d3]/20 uppercase italic">ou</span>
-                <p className="text-[#f5e6d3]/60 font-dst text-sm italic">Preencha o quiz abaixo manualmente</p>
+              <h2 className="text-6xl font-dst text-[#f5e6d3] tracking-tighter uppercase italic">Diagnóstico de Sobrevivência</h2>
+              <p className="text-[#f5e6d3]/60 font-dst text-lg max-w-2xl mx-auto leading-relaxed">
+                Responda com honestidade radical. Suas respostas definem seu nível inicial em cada atributo da Roda da Vida para 2026.
+              </p>
+              <div className="flex items-center justify-center gap-2 text-amber-500/40 py-4">
+                <ShieldCheck size={16} />
+                <span className="text-[10px] uppercase font-dst tracking-[0.3em]">Ambiente Privado & Protegido</span>
               </div>
             </div>
             <ManualEntry onConfirm={handleConfirmScores} />
